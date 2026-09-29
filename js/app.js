@@ -69,7 +69,9 @@ window.Blockheads = (function () {
     });
     const result = await resp.json().catch(() => ({}));
     if (!resp.ok || result.error) {
-      throw new Error(result.error || 'Something went wrong');
+      // Supabase's own gateway errors (function not deployed, JWT check on)
+      // come back as { message } rather than our { error }, so show those too.
+      throw new Error(result.error || result.message || result.msg || `Something went wrong (HTTP ${resp.status})`);
     }
     return result;
   }
