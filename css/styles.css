@@ -283,10 +283,11 @@ main { max-width: 1100px; margin: 0 auto; padding: 28px 32px 60px; }
 .request-meta { display: flex; flex-direction: column; gap: 1px; flex-grow: 1; min-width: 0; }
 .request-meta strong { font-size: 0.9rem; }
 .member-row {
-  display: grid; grid-template-columns: 2fr 2fr 1fr 1fr auto; gap: 8px; align-items: center;
+  display: grid; grid-template-columns: 2fr 2fr 1fr 1fr 200px; gap: 8px; align-items: center;
   padding: 11px 18px; border-bottom: 1px solid var(--border); font-size: 0.85rem;
 }
 .member-row:last-child { border-bottom: none; }
+.member-actions { display: flex; gap: 6px; justify-content: flex-end; flex-wrap: wrap; }
 .member-row-head {
   font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-faint);
 }

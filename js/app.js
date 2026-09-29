@@ -57,7 +57,7 @@ window.Blockheads = (function () {
     return session ? session.access_token : null;
   }
 
-  // Calls the create-user Edge Function (approve / createAdmin / delete),
+  // Calls the create-user Edge Function (approve / delete),
   // automatically attaching the signed-in caller's access token so the
   // function can verify who's asking, server-side.
   async function callEdgeFunction(body) {

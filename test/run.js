@@ -106,7 +106,7 @@ async function main() {
 
   await page.click('#nav-members');
   await page.waitForTimeout(100);
-  check('admin: Add admin button hidden (superuser-only)', await page.isHidden('#add-admin-button'));
+  check('admin: no Make admin/member buttons (superuser-only)', (await page.$$('#members-list .role-change-button')).length === 0);
   check('admin: pending count shows 2', (await page.textContent('#pending-count')).trim() === '2');
   const pendingRows = await page.$$('#pending-requests-list .request-row');
   check('admin: two pending request rows rendered', pendingRows.length === 2, `found ${pendingRows.length}`);
@@ -172,18 +172,18 @@ async function main() {
 
   await page.click('#nav-members');
   await page.waitForTimeout(100);
-  check('superuser: Add admin button visible', await page.isVisible('#add-admin-button'));
   const removeButtonsSuper = await page.$$('#members-list .remove-member-button');
   check('superuser: remove buttons present for other members', removeButtonsSuper.length > 0, `found ${removeButtonsSuper.length}`);
 
-  await page.click('#add-admin-button');
-  await page.fill('#admin-name', 'New Admin');
-  await page.fill('#admin-email', 'newadmin@blockheads.test');
-  await page.fill('#admin-password', 'newadminpass');
-  await page.click('#admin-form button[type="submit"]');
+  const patRole = () => page.textContent('#members-list .member-row:has-text("Pat Member") .role-pill');
+  page.once('dialog', (d) => d.accept());
+  await page.click('#members-list .member-row:has-text("Pat Member") .role-change-button');
   await page.waitForTimeout(200);
-  const memberRowsAfterCreate = await page.$$('#members-list .member-row');
-  check('superuser: member count grows after createAdmin', memberRowsAfterCreate.length === 5, `found ${memberRowsAfterCreate.length}`);
+  check('superuser: Make admin promotes a member', (await patRole()).trim() === 'admin');
+  page.once('dialog', (d) => d.accept());
+  await page.click('#members-list .member-row:has-text("Pat Member") .role-change-button');
+  await page.waitForTimeout(200);
+  check('superuser: Make member steps an admin back down', (await patRole()).trim() === 'member');
 
   await page.click('#sign-out-button');
   await page.waitForTimeout(150);

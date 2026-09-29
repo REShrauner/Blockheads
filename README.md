@@ -49,7 +49,7 @@ Since there's no one to approve the very first user, create yourself directly:
 
 1. In the left sidebar, go to **Authentication > Users**, then **Add user**. Enter your email and a password, and check **Auto Confirm User** if it's offered.
 2. Go to **Table Editor > profiles**, and add a row: `id` = the user id you just created (copy it from the Authentication > Users list), `email` = your email, `display_name` = your name, `role` = `superuser`.
-3. That's your login. From inside the app, you can create admin accounts directly (Members > + Add admin) - only member-level requests need the approve/deny flow.
+3. That's your login. Everyone else joins through **Request access**; once approved, you can turn any member into an admin from the Members page (**Make admin**), and back again (**Make member**).
 
 ### 6. Get your project's API keys
 
@@ -83,10 +83,10 @@ js/supabaseClient.js                   sets up the shared Supabase connection
 js/app.js                              shared state, navigation, data loading
 js/calendar.js                         calendar rendering, month nav, add/edit meeting
 js/projects.js                         project grid, file list, upload/download/delete
-js/admin.js                            pending requests, member directory, add admin
+js/admin.js                            pending requests, member directory, make admin/member
 js/auth.js                             sign-in, sign-out, request-access form
 supabase/schema.sql                    tables + row-level security rules + storage policies
-supabase/functions/create-user/        the Edge Function behind approve / add admin / remove
+supabase/functions/create-user/        the Edge Function behind approve / remove
 test/                                  a Playwright UI test suite against a mocked backend
 ```
 

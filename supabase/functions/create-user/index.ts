@@ -128,39 +128,6 @@ Deno.serve(async (req) => {
     return json({ ok: true, userId: created.user.id });
   }
 
-  // ---- Create an admin directly (superuser only, no request needed) -------
-  if (action === "createAdmin") {
-    if (callerRole !== "superuser") {
-      return json({ error: "Only the superuser can create an admin account" }, 403);
-    }
-    const { name, email, password } = body as { name?: string; email?: string; password?: string };
-    if (!name || !email || !password || password.length < 8) {
-      return json({ error: "Name, email, and an 8+ character password are all required" }, 400);
-    }
-
-    const { data: created, error: createError } = await admin.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: true,
-    });
-    if (createError || !created?.user) {
-      return json({ error: createError?.message || "Could not create the login" }, 500);
-    }
-
-    const { error: profileError } = await admin.from("profiles").insert({
-      id: created.user.id,
-      email,
-      display_name: name,
-      role: "admin",
-    });
-    if (profileError) {
-      await admin.auth.admin.deleteUser(created.user.id);
-      return json({ error: profileError.message }, 500);
-    }
-
-    return json({ ok: true, userId: created.user.id });
-  }
-
   // ---- Delete a member's login (removing their profile too, via cascade) --
   if (action === "delete") {
     const { userId } = body as { userId?: string };

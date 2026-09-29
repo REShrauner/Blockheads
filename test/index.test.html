@@ -158,7 +158,6 @@
         <div class="page-title-row">
           <h1>Members</h1>
           <span class="hint" id="member-count"></span>
-          <button id="add-admin-button" class="push-right" hidden>+ Add admin</button>
         </div>
         <div class="list-card">
           <div class="member-row member-row-head">
@@ -270,32 +269,6 @@
         <button type="button" id="delete-project-button" class="danger push-left" hidden>Delete</button>
         <button type="button" id="cancel-project-button">Cancel</button>
         <button type="submit" class="primary">Save</button>
-      </div>
-    </form>
-  </div>
-</dialog>
-
-<!-- Add admin (superuser only) -->
-<dialog id="admin-form-dialog">
-  <div class="dialog-body">
-    <h2>Add admin</h2>
-    <form id="admin-form">
-      <div class="form-row">
-        <label for="admin-name">Name</label>
-        <input type="text" id="admin-name" required>
-      </div>
-      <div class="form-row">
-        <label for="admin-email">Email</label>
-        <input type="email" id="admin-email" required>
-      </div>
-      <div class="form-row">
-        <label for="admin-password">Password</label>
-        <input type="password" id="admin-password" required minlength="8">
-      </div>
-      <p id="admin-form-error" class="error-text" hidden></p>
-      <div class="dialog-actions">
-        <button type="button" id="cancel-admin-button">Cancel</button>
-        <button type="submit" class="primary">Create admin</button>
       </div>
     </form>
   </div>
