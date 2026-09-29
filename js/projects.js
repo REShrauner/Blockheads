@@ -330,5 +330,5 @@ window.BlockheadsProjects = (function () {
     await B.refreshCore();
   });
 
-  return { renderProjectsGrid, openProjectDetail };
+  return { renderProjectsGrid, openProjectDetail, prepareIconPhoto };
 })();

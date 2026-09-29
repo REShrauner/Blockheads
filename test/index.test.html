@@ -189,6 +189,14 @@
         <input type="text" id="event-title" required placeholder="e.g. Half-Square Triangles">
       </div>
       <div class="form-row">
+        <label for="event-photo-input">Photo <span class="hint-inline">(optional &ndash; otherwise the project's photo is used)</span></label>
+        <div class="event-photo-row">
+          <div id="event-photo-preview" class="upcoming-thumb event-photo-preview"></div>
+          <input type="file" id="event-photo-input" accept="image/*,.heic,.heif">
+          <button type="button" id="event-photo-remove" class="small-button" hidden>Remove photo</button>
+        </div>
+      </div>
+      <div class="form-row">
         <label for="event-project">Project</label>
         <select id="event-project">
           <option value="">(none)</option>

@@ -19,6 +19,36 @@ window.BlockheadsCalendar = (function () {
   const fieldTitle = document.getElementById('event-title');
   const fieldProject = document.getElementById('event-project');
   const fieldNotes = document.getElementById('event-notes');
+  const fieldPhoto = document.getElementById('event-photo-input');
+  const photoPreview = document.getElementById('event-photo-preview');
+  const photoRemoveButton = document.getElementById('event-photo-remove');
+  const BUCKET = 'project-files';
+  let removePhoto = false;
+
+  // Signed URLs for photos, cached for ~50 minutes so month-to-month
+  // navigation doesn't re-request them every time.
+  const urlCache = new Map();
+  async function photoUrl(path) {
+    if (!path) return null;
+    const hit = urlCache.get(path);
+    if (hit && hit.expires > Date.now()) return hit.url;
+    const { data } = await window.supabaseClient.storage.from(BUCKET).createSignedUrl(path, 3600);
+    if (!data) return null;
+    urlCache.set(path, { url: data.signedUrl, expires: Date.now() + 50 * 60 * 1000 });
+    return data.signedUrl;
+  }
+
+  // Meeting photo first, then the linked project's photo, else none.
+  function photoPathFor(ev) {
+    if (ev.photo_path) return ev.photo_path;
+    const project = ev.project_id && B.state.projects.find((p) => p.id === ev.project_id);
+    return project && project.icon_path ? project.icon_path : null;
+  }
+
+  async function setThumb(el, path) {
+    const url = await photoUrl(path);
+    el.style.backgroundImage = url ? `url('${url}')` : '';
+  }
   const deleteButton = document.getElementById('delete-event-button');
   const cancelButton = document.getElementById('cancel-event-button');
 
@@ -144,6 +174,8 @@ window.BlockheadsCalendar = (function () {
       item.addEventListener('click', () => {
         if (ev.project_id) window.BlockheadsProjects.openProjectDetail(ev.project_id);
       });
+      const thumbPath = photoPathFor(ev);
+      if (thumbPath) setThumb(item.querySelector('.upcoming-thumb'), thumbPath);
       upcomingList.appendChild(item);
     });
   }
@@ -162,6 +194,9 @@ window.BlockheadsCalendar = (function () {
     editingId = id || null;
     form.reset();
     populateProjectOptions();
+    removePhoto = false;
+    photoPreview.style.backgroundImage = '';
+    photoRemoveButton.hidden = true;
 
     if (editingId) {
       const ev = B.state.events.find((e) => e.id === editingId);
@@ -174,6 +209,10 @@ window.BlockheadsCalendar = (function () {
       fieldTitle.value = ev.title;
       fieldProject.value = ev.project_id || '';
       fieldNotes.value = ev.notes || '';
+      if (ev.photo_path) {
+        setThumb(photoPreview, ev.photo_path);
+        photoRemoveButton.hidden = false;
+      }
     } else {
       formTitle.textContent = 'Add meeting';
       deleteButton.hidden = true;
@@ -181,6 +220,23 @@ window.BlockheadsCalendar = (function () {
     }
     dialog.showModal();
   }
+
+  fieldPhoto.addEventListener('change', () => {
+    const file = fieldPhoto.files[0];
+    if (!file) return;
+    removePhoto = false;
+    photoRemoveButton.hidden = false;
+    // HEIC can't be previewed in most browsers; show the gradient until saved.
+    const canPreview = /^image\/(jpeg|png|webp|gif)$/i.test(file.type);
+    photoPreview.style.backgroundImage = canPreview ? `url('${URL.createObjectURL(file)}')` : '';
+  });
+
+  photoRemoveButton.addEventListener('click', () => {
+    fieldPhoto.value = '';
+    removePhoto = true;
+    photoPreview.style.backgroundImage = '';
+    photoRemoveButton.hidden = true;
+  });
 
   addEventButton.addEventListener('click', () => openForm(null));
   cancelButton.addEventListener('click', () => dialog.close());
@@ -208,12 +264,34 @@ window.BlockheadsCalendar = (function () {
       return;
     }
 
-    const query = editingId
-      ? window.supabaseClient.from('calendar_events').update(payload).eq('id', editingId)
-      : window.supabaseClient.from('calendar_events').insert({ ...payload, created_by: B.state.user.id });
+    if (removePhoto) payload.photo_path = null;
 
-    const { error } = await query;
-    if (error) { alert('Could not save meeting: ' + error.message); return; }
+    let eventId = editingId;
+    if (editingId) {
+      const { error } = await window.supabaseClient.from('calendar_events').update(payload).eq('id', editingId);
+      if (error) { alert('Could not save meeting: ' + error.message); return; }
+    } else {
+      const { data: inserted, error } = await window.supabaseClient
+        .from('calendar_events')
+        .insert({ ...payload, created_by: B.state.user.id })
+        .select()
+        .single();
+      if (error) { alert('Could not save meeting: ' + error.message); return; }
+      eventId = inserted && inserted.id;
+    }
+
+    if (fieldPhoto.files.length && eventId) {
+      try {
+        const file = await window.BlockheadsProjects.prepareIconPhoto(fieldPhoto.files[0]);
+        const path = `meetings/${eventId}/${Date.now()}-${file.name}`;
+        const { error: uploadError } = await window.supabaseClient.storage.from(BUCKET).upload(path, file, { upsert: true });
+        if (uploadError) throw uploadError;
+        const { error: updateError } = await window.supabaseClient.from('calendar_events').update({ photo_path: path }).eq('id', eventId);
+        if (updateError) throw updateError;
+      } catch (err) {
+        alert('Meeting saved, but the photo could not be added: ' + err.message);
+      }
+    }
 
     dialog.close();
     await B.refreshCore();

@@ -130,6 +130,10 @@ button:disabled { opacity: 0.6; cursor: default; }
 .form-row-pair { display: flex; gap: 12px; }
 .form-row-pair .form-row { flex: 1; }
 .form-hint { margin: -4px 0 0; font-size: 0.8rem; }
+.event-photo-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.event-photo-row input[type="file"] { flex: 1; min-width: 0; }
+.event-photo-preview { width: 48px; height: 48px; }
+.small-button { padding: 6px 10px; font-size: 0.8rem; }
 
 /* ---- App header / nav ------------------------------------------------ */
 .app-header {
@@ -197,6 +201,7 @@ main { max-width: 1100px; margin: 0 auto; padding: 28px 32px 60px; }
 .upcoming-thumb {
   width: 40px; height: 40px; flex-shrink: 0; border-radius: 6px;
   background: linear-gradient(135deg, var(--accent), var(--gold));
+  background-size: cover; background-position: center;
 }
 .upcoming-meta { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .upcoming-date { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--accent); }

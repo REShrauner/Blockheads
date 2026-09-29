@@ -151,6 +151,9 @@ create index if not exists calendar_events_date_idx on calendar_events (event_da
 -- Added later: optional start/end times (blank = all-day). Safe to re-run.
 alter table calendar_events add column if not exists start_time time;
 alter table calendar_events add column if not exists end_time time;
+-- Added later: optional meeting photo (storage path in project-files bucket,
+-- under meetings/...). Blank = use the linked project's photo.
+alter table calendar_events add column if not exists photo_path text;
 
 alter table calendar_events enable row level security;
 
@@ -176,6 +179,7 @@ with check (my_role() in ('admin', 'superuser'));
 -- Path convention the app uses:
 --   <project id>/icon/<filename>   - the project's icon photo
 --   <project id>/files/<filename>  - everything else attached to it
+--   meetings/<event id>/<filename> - a calendar meeting's photo
 --
 -- Then run the policies below.
 -- ---------------------------------------------------------------------------
