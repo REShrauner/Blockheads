@@ -1,0 +1,281 @@
+// Projects grid, project detail (file list backed by Supabase Storage), and
+// the add/edit project dialog.
+window.BlockheadsProjects = (function () {
+  const B = window.Blockheads;
+  const BUCKET = 'project-files';
+
+  const grid = document.getElementById('projects-grid');
+  const gridEmpty = document.getElementById('projects-empty');
+  const addProjectButton = document.getElementById('add-project-button');
+  const backToProjects = document.getElementById('back-to-projects');
+
+  const detailIcon = document.getElementById('project-detail-icon');
+  const detailName = document.getElementById('project-detail-name');
+  const detailDescription = document.getElementById('project-detail-description');
+  const detailByline = document.getElementById('project-detail-byline');
+  const detailAdminActions = document.getElementById('project-detail-admin-actions');
+  const replaceIconButton = document.getElementById('replace-icon-button');
+  const uploadFileButton = document.getElementById('upload-file-button');
+  const iconFileInput = document.getElementById('icon-file-input');
+  const attachmentFileInput = document.getElementById('attachment-file-input');
+  const filesList = document.getElementById('project-files-list');
+  const filesEmpty = document.getElementById('project-files-empty');
+
+  const dialog = document.getElementById('project-form-dialog');
+  const form = document.getElementById('project-form');
+  const formTitle = document.getElementById('project-form-title');
+  const fieldName = document.getElementById('project-name');
+  const fieldDescription = document.getElementById('project-description');
+  const fieldIcon = document.getElementById('project-icon-input');
+  const deleteButton = document.getElementById('delete-project-button');
+  const cancelButton = document.getElementById('cancel-project-button');
+
+  let editingId = null;
+
+  function fileTypeLabel(name) {
+    const ext = (name.split('.').pop() || '').toLowerCase();
+    if (ext === 'pdf') return 'PDF';
+    if (ext === 'doc' || ext === 'docx') return 'DOC';
+    if (ext === 'txt' || ext === 'md') return 'TXT';
+    if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic'].includes(ext)) return 'IMG';
+    return ext.slice(0, 3).toUpperCase() || 'FILE';
+  }
+
+  function formatBytes(bytes) {
+    if (!bytes && bytes !== 0) return '';
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  }
+
+  async function iconBackground(project) {
+    if (!project.icon_path) return '';
+    const { data } = await window.supabaseClient.storage.from(BUCKET).createSignedUrl(project.icon_path, 3600);
+    return data ? `background-image: url('${data.signedUrl}')` : '';
+  }
+
+  function renderProjectsGrid() {
+    addProjectButton.hidden = !B.isAdmin();
+    grid.innerHTML = '';
+    gridEmpty.hidden = B.state.projects.length > 0;
+
+    B.state.projects.forEach((project) => {
+      const tile = document.createElement('button');
+      tile.type = 'button';
+      tile.className = 'project-tile';
+      tile.innerHTML = `
+        <div class="project-icon" data-icon-for="${project.id}"></div>
+        <div class="project-tile-body">
+          <strong>${B.escapeHtml(project.name)}</strong>
+          ${project.description ? `<span class="hint">${B.escapeHtml(project.description)}</span>` : ''}
+        </div>
+      `;
+      tile.addEventListener('click', () => openProjectDetail(project.id));
+      grid.appendChild(tile);
+
+      if (project.icon_path) {
+        iconBackground(project).then((style) => {
+          if (style) tile.querySelector('.project-icon').setAttribute('style', style + '; background-size: cover; background-position: center;');
+        });
+      }
+    });
+
+    if (B.isAdmin()) {
+      const addTile = document.createElement('button');
+      addTile.type = 'button';
+      addTile.className = 'project-tile-add';
+      addTile.textContent = '+ Add project';
+      addTile.addEventListener('click', () => openForm(null));
+      grid.appendChild(addTile);
+    }
+  }
+
+  async function openProjectDetail(projectId) {
+    const project = B.state.projects.find((p) => p.id === projectId);
+    if (!project) return;
+    B.state.currentProjectId = projectId;
+    B.showSection('projectDetail');
+
+    detailName.textContent = project.name;
+    detailDescription.textContent = project.description || '';
+    detailDescription.hidden = !project.description;
+    detailByline.textContent = project.created_by_name
+      ? `Added by ${project.created_by_name} · ${new Date(project.created_at).toLocaleDateString()}`
+      : `Added ${new Date(project.created_at).toLocaleDateString()}`;
+    detailIcon.setAttribute('style', '');
+    detailAdminActions.hidden = !B.isAdmin();
+
+    if (project.icon_path) {
+      const style = await iconBackground(project);
+      if (style) detailIcon.setAttribute('style', style + '; background-size: cover; background-position: center;');
+    }
+
+    await renderFileList(projectId);
+  }
+
+  async function renderFileList(projectId) {
+    filesList.innerHTML = '';
+    const { data: files, error } = await window.supabaseClient.storage.from(BUCKET).list(`${projectId}/files`, {
+      sortBy: { column: 'name', order: 'asc' },
+    });
+    if (error) {
+      filesEmpty.hidden = false;
+      filesEmpty.textContent = 'Could not load files: ' + error.message;
+      return;
+    }
+    const realFiles = (files || []).filter((f) => f.id); // Supabase returns a placeholder row for empty folders
+    filesEmpty.hidden = realFiles.length > 0;
+    filesEmpty.textContent = 'No files yet.';
+
+    for (const file of realFiles) {
+      const path = `${projectId}/files/${file.name}`;
+      const row = document.createElement('div');
+      row.className = 'file-row';
+      row.innerHTML = `
+        <div class="file-icon">${fileTypeLabel(file.name)}</div>
+        <div class="file-meta">
+          <strong>${B.escapeHtml(file.name)}</strong>
+          <span class="hint small">${formatBytes(file.metadata && file.metadata.size)} &middot; uploaded ${new Date(file.created_at).toLocaleDateString()}</span>
+        </div>
+        <button type="button" class="file-download">Download</button>
+        ${B.isAdmin() ? '<button type="button" class="file-delete danger">Delete</button>' : ''}
+      `;
+      row.querySelector('.file-download').addEventListener('click', async () => {
+        const { data, error: urlError } = await window.supabaseClient.storage.from(BUCKET).createSignedUrl(path, 60, { download: true });
+        if (urlError) { alert('Could not download: ' + urlError.message); return; }
+        window.open(data.signedUrl, '_blank');
+      });
+      const del = row.querySelector('.file-delete');
+      if (del) {
+        del.addEventListener('click', async () => {
+          if (!confirm(`Delete "${file.name}"? This can't be undone.`)) return;
+          const { error: deleteError } = await window.supabaseClient.storage.from(BUCKET).remove([path]);
+          if (deleteError) { alert('Could not delete: ' + deleteError.message); return; }
+          renderFileList(projectId);
+        });
+      }
+      filesList.appendChild(row);
+    }
+  }
+
+  uploadFileButton.addEventListener('click', () => attachmentFileInput.click());
+  attachmentFileInput.addEventListener('change', async () => {
+    const projectId = B.state.currentProjectId;
+    if (!projectId || !attachmentFileInput.files.length) return;
+    uploadFileButton.disabled = true;
+    uploadFileButton.textContent = 'Uploading…';
+    try {
+      for (const file of Array.from(attachmentFileInput.files)) {
+        const path = `${projectId}/files/${file.name}`;
+        const { error } = await window.supabaseClient.storage.from(BUCKET).upload(path, file, { upsert: true });
+        if (error) throw error;
+      }
+      await renderFileList(projectId);
+    } catch (err) {
+      alert('Could not upload: ' + err.message);
+    } finally {
+      uploadFileButton.disabled = false;
+      uploadFileButton.textContent = '+ Upload file';
+      attachmentFileInput.value = '';
+    }
+  });
+
+  replaceIconButton.addEventListener('click', () => iconFileInput.click());
+  iconFileInput.addEventListener('change', async () => {
+    const projectId = B.state.currentProjectId;
+    if (!projectId || !iconFileInput.files.length) return;
+    const file = iconFileInput.files[0];
+    const path = `${projectId}/icon/${Date.now()}-${file.name}`;
+    replaceIconButton.disabled = true;
+    replaceIconButton.textContent = 'Uploading…';
+    try {
+      const { error: uploadError } = await window.supabaseClient.storage.from(BUCKET).upload(path, file, { upsert: true });
+      if (uploadError) throw uploadError;
+      const { error: updateError } = await window.supabaseClient.from('projects').update({ icon_path: path }).eq('id', projectId);
+      if (updateError) throw updateError;
+      await B.refreshCore();
+      await openProjectDetail(projectId);
+    } catch (err) {
+      alert('Could not update photo: ' + err.message);
+    } finally {
+      replaceIconButton.disabled = false;
+      replaceIconButton.textContent = 'Replace photo';
+      iconFileInput.value = '';
+    }
+  });
+
+  backToProjects.addEventListener('click', (e) => {
+    e.preventDefault();
+    B.state.currentProjectId = null;
+    B.showSection('projects');
+  });
+
+  function openForm(id) {
+    editingId = id || null;
+    form.reset();
+    if (editingId) {
+      const project = B.state.projects.find((p) => p.id === editingId);
+      if (!project) return;
+      formTitle.textContent = 'Edit project';
+      deleteButton.hidden = false;
+      fieldName.value = project.name;
+      fieldDescription.value = project.description || '';
+    } else {
+      formTitle.textContent = 'Add project';
+      deleteButton.hidden = true;
+    }
+    dialog.showModal();
+  }
+
+  addProjectButton.addEventListener('click', () => openForm(null));
+  cancelButton.addEventListener('click', () => dialog.close());
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = fieldName.value.trim();
+    const description = fieldDescription.value.trim() || null;
+    if (!name) { alert('Name is required.'); return; }
+
+    if (editingId) {
+      const { error } = await window.supabaseClient.from('projects').update({ name, description }).eq('id', editingId);
+      if (error) { alert('Could not save: ' + error.message); return; }
+    } else {
+      const { data: inserted, error } = await window.supabaseClient
+        .from('projects')
+        .insert({
+          name,
+          description,
+          created_by: B.state.user.id,
+          created_by_name: B.state.user.displayName || B.state.user.email,
+        })
+        .select()
+        .single();
+      if (error) { alert('Could not save: ' + error.message); return; }
+
+      if (fieldIcon.files.length && inserted) {
+        const file = fieldIcon.files[0];
+        const path = `${inserted.id}/icon/${Date.now()}-${file.name}`;
+        const { error: uploadError } = await window.supabaseClient.storage.from(BUCKET).upload(path, file, { upsert: true });
+        if (!uploadError) {
+          await window.supabaseClient.from('projects').update({ icon_path: path }).eq('id', inserted.id);
+        }
+      }
+    }
+
+    dialog.close();
+    await B.refreshCore();
+  });
+
+  deleteButton.addEventListener('click', async () => {
+    if (!editingId) return;
+    if (!confirm('Delete this project? Its files will stay in storage but the project entry, and any calendar links to it, will be removed. This can\'t be undone.')) return;
+    const { error } = await window.supabaseClient.from('projects').delete().eq('id', editingId);
+    if (error) { alert('Could not delete: ' + error.message); return; }
+    dialog.close();
+    B.state.currentProjectId = null;
+    B.showSection('projects');
+    await B.refreshCore();
+  });
+
+  return { renderProjectsGrid, openProjectDetail };
+})();

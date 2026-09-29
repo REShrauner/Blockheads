@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Blockheads</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@400;600;700&family=Karla:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<!-- Sign-in gate -->
+<div id="sign-in-view">
+  <div class="auth-card">
+    <div class="brand">
+      <div class="brand-mark"><span></span><span></span></div>
+      <span class="brand-name">Blockheads</span>
+    </div>
+
+    <div class="tabs" role="tablist">
+      <button type="button" id="tab-sign-in" role="tab" aria-selected="true">Sign in</button>
+      <button type="button" id="tab-request-access" role="tab" aria-selected="false">Request access</button>
+    </div>
+
+    <form id="sign-in-form">
+      <div class="form-row">
+        <label for="sign-in-email">Email</label>
+        <input type="email" id="sign-in-email" required autocomplete="username">
+      </div>
+      <div class="form-row">
+        <label for="sign-in-password">Password</label>
+        <input type="password" id="sign-in-password" required autocomplete="current-password">
+      </div>
+      <p id="sign-in-error" class="error-text" hidden></p>
+      <button type="submit" class="primary full-width">Sign in</button>
+    </form>
+
+    <form id="request-access-form" hidden>
+      <p class="hint">Tell us who you are and an admin will review your request. You'll be able to sign in as soon as you're approved.</p>
+      <div class="form-row">
+        <label for="request-name">Name</label>
+        <input type="text" id="request-name" required autocomplete="name">
+      </div>
+      <div class="form-row">
+        <label for="request-email">Email</label>
+        <input type="email" id="request-email" required autocomplete="email">
+      </div>
+      <div class="form-row">
+        <label for="request-password">Choose a password</label>
+        <input type="password" id="request-password" required minlength="8" autocomplete="new-password">
+        <span class="hint">At least 8 characters. This becomes your sign-in password once you're approved.</span>
+      </div>
+      <div class="form-row">
+        <label for="request-note">Note <span class="hint-inline">(optional)</span></label>
+        <textarea id="request-note" rows="3"></textarea>
+      </div>
+      <p id="request-error" class="error-text" hidden></p>
+      <p id="request-success" class="success-text" hidden>Request sent! An admin will review it and you'll be able to sign in once approved.</p>
+      <button type="submit" class="primary full-width">Request access</button>
+    </form>
+  </div>
+</div>
+
+<!-- Main app -->
+<div id="app-view" hidden>
+  <header class="app-header">
+    <div class="brand">
+      <div class="brand-mark"><span></span><span></span></div>
+      <span class="brand-name">Blockheads</span>
+    </div>
+    <nav class="main-nav">
+      <a href="#" id="nav-calendar" class="nav-link">Calendar</a>
+      <a href="#" id="nav-projects" class="nav-link">Projects</a>
+      <a href="#" id="nav-members" class="nav-link" hidden>Members</a>
+    </nav>
+    <div class="header-right">
+      <span class="hint" id="user-email-label"></span>
+      <span class="role-badge" id="user-role-badge"></span>
+      <button id="sign-out-button">Sign out</button>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- Calendar -->
+    <section id="calendar-section">
+      <div class="page-title-row">
+        <h1 id="calendar-month-label">Calendar</h1>
+        <div class="month-nav">
+          <button type="button" id="calendar-prev-month" aria-label="Previous month">&lsaquo;</button>
+          <button type="button" id="calendar-next-month" aria-label="Next month">&rsaquo;</button>
+        </div>
+        <span class="hint">Bee meetings and the day's project</span>
+        <button id="add-event-button" class="primary push-right" hidden>+ Add meeting</button>
+      </div>
+      <div class="calendar-layout">
+        <div id="calendar-grid" class="calendar-grid"></div>
+        <div class="upcoming-panel">
+          <h2>Upcoming</h2>
+          <div id="upcoming-list"></div>
+          <p id="upcoming-empty" class="hint" hidden>No meetings scheduled yet.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Projects grid -->
+    <section id="projects-section" hidden>
+      <div class="page-title-row">
+        <h1>Projects</h1>
+        <span class="hint">Every pattern and instruction set the bee has used</span>
+        <button id="add-project-button" class="primary push-right" hidden>+ Add project</button>
+      </div>
+      <div id="projects-grid" class="projects-grid"></div>
+      <p id="projects-empty" class="hint" hidden>No projects yet.</p>
+    </section>
+
+    <!-- Project detail -->
+    <section id="project-detail-section" hidden>
+      <a href="#" id="back-to-projects" class="crumb">&larr; Projects</a>
+      <div class="project-detail-header">
+        <div id="project-detail-icon" class="project-icon-lg"></div>
+        <div class="project-detail-meta">
+          <h1 id="project-detail-name"></h1>
+          <p id="project-detail-description" class="hint"></p>
+          <p id="project-detail-byline" class="hint small"></p>
+        </div>
+        <div class="project-detail-actions" id="project-detail-admin-actions" hidden>
+          <button id="replace-icon-button">Replace photo</button>
+          <button id="upload-file-button" class="primary">+ Upload file</button>
+          <input type="file" id="icon-file-input" hidden>
+          <input type="file" id="attachment-file-input" hidden multiple>
+        </div>
+      </div>
+      <div id="project-files-list" class="file-list"></div>
+      <p id="project-files-empty" class="hint" hidden>No files yet.</p>
+    </section>
+
+    <!-- Members / admin -->
+    <section id="members-section" hidden>
+      <div class="admin-block">
+        <div class="page-title-row">
+          <h1>Pending requests</h1>
+          <span class="count-pill" id="pending-count">0</span>
+        </div>
+        <div id="pending-requests-list" class="list-card"></div>
+        <p id="pending-empty" class="hint" hidden>No pending requests.</p>
+      </div>
+
+      <div class="admin-block">
+        <div class="page-title-row">
+          <h1>Members</h1>
+          <span class="hint" id="member-count"></span>
+          <button id="add-admin-button" class="push-right" hidden>+ Add admin</button>
+        </div>
+        <div class="list-card">
+          <div class="member-row member-row-head">
+            <span>Name</span><span>Email</span><span>Role</span><span>Joined</span><span></span>
+          </div>
+          <div id="members-list"></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- Add / edit calendar event -->
+<dialog id="event-form-dialog">
+  <div class="dialog-body">
+    <h2 id="event-form-title">Add meeting</h2>
+    <form id="event-form">
+      <div class="form-row">
+        <label for="event-date">Date</label>
+        <input type="date" id="event-date" required>
+      </div>
+      <div class="form-row">
+        <label for="event-title">Title</label>
+        <input type="text" id="event-title" required placeholder="e.g. Half-Square Triangles">
+      </div>
+      <div class="form-row">
+        <label for="event-project">Project</label>
+        <select id="event-project">
+          <option value="">(none)</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label for="event-notes">Notes</label>
+        <textarea id="event-notes" rows="3"></textarea>
+      </div>
+      <div class="dialog-actions">
+        <button type="button" id="delete-event-button" class="danger push-left" hidden>Delete</button>
+        <button type="button" id="cancel-event-button">Cancel</button>
+        <button type="submit" class="primary">Save</button>
+      </div>
+    </form>
+  </div>
+</dialog>
+
+<!-- Add / edit project -->
+<dialog id="project-form-dialog">
+  <div class="dialog-body">
+    <h2 id="project-form-title">Add project</h2>
+    <form id="project-form">
+      <div class="form-row">
+        <label for="project-name">Name</label>
+        <input type="text" id="project-name" required>
+      </div>
+      <div class="form-row">
+        <label for="project-description">Description</label>
+        <textarea id="project-description" rows="3"></textarea>
+      </div>
+      <div class="form-row">
+        <label for="project-icon-input">Icon photo <span class="hint-inline">(optional)</span></label>
+        <input type="file" id="project-icon-input" accept="image/*">
+      </div>
+      <div class="dialog-actions">
+        <button type="button" id="delete-project-button" class="danger push-left" hidden>Delete</button>
+        <button type="button" id="cancel-project-button">Cancel</button>
+        <button type="submit" class="primary">Save</button>
+      </div>
+    </form>
+  </div>
+</dialog>
+
+<!-- Add admin (superuser only) -->
+<dialog id="admin-form-dialog">
+  <div class="dialog-body">
+    <h2>Add admin</h2>
+    <form id="admin-form">
+      <div class="form-row">
+        <label for="admin-name">Name</label>
+        <input type="text" id="admin-name" required>
+      </div>
+      <div class="form-row">
+        <label for="admin-email">Email</label>
+        <input type="email" id="admin-email" required>
+      </div>
+      <div class="form-row">
+        <label for="admin-password">Password</label>
+        <input type="password" id="admin-password" required minlength="8">
+      </div>
+      <p id="admin-form-error" class="error-text" hidden></p>
+      <div class="dialog-actions">
+        <button type="button" id="cancel-admin-button">Cancel</button>
+        <button type="submit" class="primary">Create admin</button>
+      </div>
+    </form>
+  </div>
+</dialog>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/supabaseClient.js"></script>
+<script src="js/app.js"></script>
+<script src="js/calendar.js"></script>
+<script src="js/projects.js"></script>
+<script src="js/admin.js"></script>
+<script src="js/auth.js"></script>
+</body>
+</html>
