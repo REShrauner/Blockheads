@@ -8,6 +8,6 @@
 // Box's is: this is a static site with no build step, so GitHub Pages can
 // only serve what's actually in the repo.
 window.BLOCKHEADS_CONFIG = {
-  supabaseUrl: 'https://dbxgycpqdbziymsvoyoz.supabase.co/rest/v1/',
+  supabaseUrl: 'https://dbxgycpqdbziymsvoyoz.supabase.co',
   supabaseAnonKey: 'sb_publishable_Qrg4h8MYX5lMW7ba6B4nLQ_-giGVWjI',
 };
