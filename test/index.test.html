@@ -127,7 +127,7 @@
         <div class="project-detail-actions" id="project-detail-admin-actions" hidden>
           <button id="replace-icon-button">Replace photo</button>
           <button id="upload-file-button" class="primary">+ Upload file</button>
-          <input type="file" id="icon-file-input" hidden>
+          <input type="file" id="icon-file-input" accept="image/*,.heic,.heif" hidden>
           <input type="file" id="attachment-file-input" hidden multiple>
         </div>
       </div>
@@ -222,7 +222,7 @@
       </div>
       <div class="form-row">
         <label for="project-icon-input">Icon photo <span class="hint-inline">(optional)</span></label>
-        <input type="file" id="project-icon-input" accept="image/*">
+        <input type="file" id="project-icon-input" accept="image/*,.heic,.heif">
       </div>
       <div class="dialog-actions">
         <button type="button" id="delete-project-button" class="danger push-left" hidden>Delete</button>

@@ -180,15 +180,65 @@ window.BlockheadsProjects = (function () {
     }
   });
 
+  // Icon photos: convert iPhone HEIC photos to JPEG (most browsers can't show
+  // HEIC) and shrink big photos so they load quickly. Other files pass through.
+  let heicLoader = null;
+  function loadHeicConverter() {
+    if (window.heic2any) return Promise.resolve();
+    if (!heicLoader) {
+      heicLoader = new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js';
+        s.onload = resolve;
+        s.onerror = () => { heicLoader = null; reject(new Error('Could not load the HEIC converter.')); };
+        document.head.appendChild(s);
+      });
+    }
+    return heicLoader;
+  }
+
+  function isHeic(file) {
+    return /\.(heic|heif)$/i.test(file.name) || /image\/hei[cf]/i.test(file.type);
+  }
+
+  async function prepareIconPhoto(file) {
+    let blob = file;
+    let baseName = file.name.replace(/\.[^.]+$/, '');
+    if (isHeic(file)) {
+      await loadHeicConverter();
+      const out = await window.heic2any({ blob: file, toType: 'image/jpeg', quality: 0.9 });
+      blob = Array.isArray(out) ? out[0] : out;
+    } else if (!/^image\/(jpeg|png|webp|gif)$/i.test(file.type)) {
+      throw new Error('Please choose a JPG, PNG, WebP, GIF, or HEIC photo.');
+    } else if (/gif/i.test(file.type)) {
+      return file; // keep animated GIFs as-is
+    }
+
+    // Shrink to at most 1200px on the long side, saved as JPEG.
+    const MAX = 1200;
+    const bitmap = await createImageBitmap(blob);
+    const scale = Math.min(1, MAX / Math.max(bitmap.width, bitmap.height));
+    if (scale === 1 && blob !== file) {
+      return new File([blob], `${baseName}.jpg`, { type: 'image/jpeg' });
+    }
+    if (scale === 1) return file;
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(bitmap.width * scale);
+    canvas.height = Math.round(bitmap.height * scale);
+    canvas.getContext('2d').drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    const jpeg = await new Promise((res) => canvas.toBlob(res, 'image/jpeg', 0.85));
+    return new File([jpeg], `${baseName}.jpg`, { type: 'image/jpeg' });
+  }
+
   replaceIconButton.addEventListener('click', () => iconFileInput.click());
   iconFileInput.addEventListener('change', async () => {
     const projectId = B.state.currentProjectId;
     if (!projectId || !iconFileInput.files.length) return;
-    const file = iconFileInput.files[0];
-    const path = `${projectId}/icon/${Date.now()}-${file.name}`;
     replaceIconButton.disabled = true;
     replaceIconButton.textContent = 'Uploading…';
     try {
+      const file = await prepareIconPhoto(iconFileInput.files[0]);
+      const path = `${projectId}/icon/${Date.now()}-${file.name}`;
       const { error: uploadError } = await window.supabaseClient.storage.from(BUCKET).upload(path, file, { upsert: true });
       if (uploadError) throw uploadError;
       const { error: updateError } = await window.supabaseClient.from('projects').update({ icon_path: path }).eq('id', projectId);
@@ -253,11 +303,14 @@ window.BlockheadsProjects = (function () {
       if (error) { alert('Could not save: ' + error.message); return; }
 
       if (fieldIcon.files.length && inserted) {
-        const file = fieldIcon.files[0];
-        const path = `${inserted.id}/icon/${Date.now()}-${file.name}`;
-        const { error: uploadError } = await window.supabaseClient.storage.from(BUCKET).upload(path, file, { upsert: true });
-        if (!uploadError) {
+        try {
+          const file = await prepareIconPhoto(fieldIcon.files[0]);
+          const path = `${inserted.id}/icon/${Date.now()}-${file.name}`;
+          const { error: uploadError } = await window.supabaseClient.storage.from(BUCKET).upload(path, file, { upsert: true });
+          if (uploadError) throw uploadError;
           await window.supabaseClient.from('projects').update({ icon_path: path }).eq('id', inserted.id);
+        } catch (err) {
+          alert('Project saved, but the photo could not be added: ' + err.message + ' You can add it with "Replace photo".');
         }
       }
     }
