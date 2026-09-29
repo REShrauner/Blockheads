@@ -169,6 +169,34 @@ using (my_role() in ('admin', 'superuser'))
 with check (my_role() in ('admin', 'superuser'));
 
 -- ---------------------------------------------------------------------------
+-- Notices: announcements shown above the calendar. Everyone signed in reads;
+-- only admins and the superuser write. show_until (optional) hides a notice
+-- from members after that date.
+-- ---------------------------------------------------------------------------
+create table if not exists notices (
+  id uuid primary key default gen_random_uuid(),
+  title text not null,
+  body text,
+  show_until date,
+  created_by uuid references auth.users(id),
+  created_by_name text,
+  created_at timestamptz not null default now()
+);
+
+alter table notices enable row level security;
+
+create policy "Everyone signed in can read notices"
+on notices for select
+to authenticated
+using (true);
+
+create policy "Admins and superuser manage notices"
+on notices for all
+to authenticated
+using (my_role() in ('admin', 'superuser'))
+with check (my_role() in ('admin', 'superuser'));
+
+-- ---------------------------------------------------------------------------
 -- Storage bucket: project-files
 --
 -- Do this part by hand first (SQL can't create a bucket):

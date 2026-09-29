@@ -207,6 +207,24 @@ main { max-width: 1100px; margin: 0 auto; padding: 28px 32px 60px; }
 .upcoming-date { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--accent); }
 .upcoming-title { font-size: 0.9rem; font-weight: 700; }
 
+/* ---- Notices --------------------------------------------------------- */
+.notices-panel {
+  background: var(--gold-tint); border: 1px solid var(--border); border-radius: 12px;
+  padding: 16px 20px; margin-bottom: 24px; display: flex; flex-direction: column; gap: 10px;
+}
+.notices-title-row { display: flex; align-items: center; gap: 12px; }
+.notices-title-row h2 { margin: 0; font-size: 1.05rem; }
+#notices-list { display: flex; flex-direction: column; gap: 10px; }
+.notice {
+  background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--gold);
+  border-radius: 8px; padding: 12px 14px;
+}
+.notice.expired { opacity: 0.6; }
+.notice-head { display: flex; align-items: flex-start; gap: 10px; }
+.notice-head h3 { margin: 0; font-size: 0.95rem; flex: 1; }
+.notice-body { margin: 6px 0; white-space: pre-wrap; line-height: 1.45; }
+.notice .hint { margin: 4px 0 0; font-size: 0.75rem; }
+
 /* ---- Projects grid -------------------------------------------------- */
 .projects-grid {
   display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 18px;

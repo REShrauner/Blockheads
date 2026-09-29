@@ -6,6 +6,7 @@ window.Blockheads = (function () {
     user: null,        // { id, email, role }
     projects: [],
     events: [],
+    notices: [],
     members: [],
     pendingRequests: [],
     currentProjectId: null,
@@ -92,14 +93,22 @@ window.Blockheads = (function () {
   els.navMembers.addEventListener('click', (e) => { e.preventDefault(); showSection('members'); });
 
   async function loadCore() {
-    const [{ data: projects, error: projectsError }, { data: events, error: eventsError }] = await Promise.all([
+    const [
+      { data: projects, error: projectsError },
+      { data: events, error: eventsError },
+      { data: notices, error: noticesError },
+    ] = await Promise.all([
       window.supabaseClient.from('projects').select('*').order('name', { ascending: true }),
       window.supabaseClient.from('calendar_events').select('*').order('event_date', { ascending: true }),
+      window.supabaseClient.from('notices').select('*').order('created_at', { ascending: false }),
     ]);
     if (projectsError) { alert('Could not load projects: ' + projectsError.message); }
     if (eventsError) { alert('Could not load calendar: ' + eventsError.message); }
     state.projects = projects || [];
     state.events = events || [];
+    // Notices are optional - if the table hasn't been created yet, just show none.
+    if (noticesError) console.warn('Could not load notices: ' + noticesError.message);
+    state.notices = notices || [];
 
     if (isAdmin()) {
       await window.BlockheadsAdmin.loadMembersAndRequests();
@@ -108,6 +117,7 @@ window.Blockheads = (function () {
 
   async function refreshCore() {
     await loadCore();
+    window.BlockheadsNotices.renderNotices();
     window.BlockheadsCalendar.renderCalendar();
     window.BlockheadsProjects.renderProjectsGrid();
     if (isAdmin()) window.BlockheadsAdmin.renderAdmin();
@@ -131,6 +141,7 @@ window.Blockheads = (function () {
     els.navMembers.hidden = !isAdmin();
 
     await loadCore();
+    window.BlockheadsNotices.renderNotices();
     window.BlockheadsCalendar.renderCalendar();
     window.BlockheadsProjects.renderProjectsGrid();
     if (isAdmin()) window.BlockheadsAdmin.renderAdmin();

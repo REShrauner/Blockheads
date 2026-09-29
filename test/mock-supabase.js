@@ -39,6 +39,10 @@
       { id: 'ev-2', event_date: dateStr(14), title: 'Flying Geese Bee', project_id: 'proj-2', notes: null, created_by: 'u-super', created_at: iso(-4) },
       { id: 'ev-3', event_date: dateStr(-3), title: 'Past Meeting', project_id: null, notes: null, created_by: 'u-admin', created_at: iso(-20) },
     ],
+    notices: [
+      { id: 'n-1', title: 'Charity quilt drive', body: 'Bring finished blocks to the next meeting.\nThank you!', show_until: null, created_by: 'u-super', created_by_name: 'Rex', created_at: iso(-2) },
+      { id: 'n-2', title: 'Old notice', body: 'This one has expired.', show_until: dateStr(-1), created_by: 'u-admin', created_by_name: 'Jane Admin', created_at: iso(-9) },
+    ],
   };
 
   const STORAGE = {
