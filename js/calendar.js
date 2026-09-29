@@ -14,6 +14,8 @@ window.BlockheadsCalendar = (function () {
   const form = document.getElementById('event-form');
   const formTitle = document.getElementById('event-form-title');
   const fieldDate = document.getElementById('event-date');
+  const fieldStart = document.getElementById('event-start-time');
+  const fieldEnd = document.getElementById('event-end-time');
   const fieldTitle = document.getElementById('event-title');
   const fieldProject = document.getElementById('event-project');
   const fieldNotes = document.getElementById('event-notes');
@@ -27,8 +29,32 @@ window.BlockheadsCalendar = (function () {
     return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
   }
 
+  // Sort key: date, then start time (all-day events first).
+  function eventSortKey(e) {
+    return `${e.event_date} ${e.start_time ? e.start_time.slice(0, 5) : '00:00'}`;
+  }
+
   function eventsOn(dateStr) {
-    return B.state.events.filter((e) => e.event_date === dateStr);
+    return B.state.events
+      .filter((e) => e.event_date === dateStr)
+      .sort((a, b) => eventSortKey(a).localeCompare(eventSortKey(b)));
+  }
+
+  // "14:30:00" -> "2:30 PM"
+  function formatTime(t) {
+    if (!t) return '';
+    const [h, m] = t.split(':').map(Number);
+    const suffix = h >= 12 ? 'PM' : 'AM';
+    const h12 = h % 12 === 0 ? 12 : h % 12;
+    return `${h12}:${String(m).padStart(2, '0')} ${suffix}`;
+  }
+
+  // "10:00 AM – 2:00 PM", "10:00 AM", or "" for all-day.
+  function formatTimeRange(ev) {
+    if (!ev.start_time) return '';
+    return ev.end_time
+      ? `${formatTime(ev.start_time)} – ${formatTime(ev.end_time)}`
+      : formatTime(ev.start_time);
   }
 
   function renderCalendar() {
@@ -69,8 +95,10 @@ window.BlockheadsCalendar = (function () {
         const chip = document.createElement('button');
         chip.type = 'button';
         chip.className = 'event-chip';
-        chip.textContent = ev.title;
-        chip.title = B.isAdmin() ? `${ev.title} - click to edit` : ev.title;
+        const when = formatTimeRange(ev);
+        chip.textContent = ev.start_time ? `${formatTime(ev.start_time)} ${ev.title}` : ev.title;
+        const tip = when ? `${ev.title} (${when})` : ev.title;
+        chip.title = B.isAdmin() ? `${tip} - click to edit` : tip;
         chip.addEventListener('click', () => {
           if (B.isAdmin()) {
             openForm(ev.id);
@@ -96,7 +124,7 @@ window.BlockheadsCalendar = (function () {
     const todayStr = toDateStr(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
     const upcoming = B.state.events
       .filter((e) => e.event_date >= todayStr)
-      .sort((a, b) => a.event_date.localeCompare(b.event_date))
+      .sort((a, b) => eventSortKey(a).localeCompare(eventSortKey(b)))
       .slice(0, 5);
 
     upcomingList.innerHTML = '';
@@ -109,7 +137,7 @@ window.BlockheadsCalendar = (function () {
       item.innerHTML = `
         <div class="upcoming-thumb"></div>
         <div class="upcoming-meta">
-          <span class="upcoming-date">${B.formatDate(ev.event_date)}</span>
+          <span class="upcoming-date">${B.formatDate(ev.event_date)}${ev.start_time ? ' · ' + formatTimeRange(ev) : ''}</span>
           <span class="upcoming-title">${B.escapeHtml(ev.title)}</span>
         </div>
       `;
@@ -141,6 +169,8 @@ window.BlockheadsCalendar = (function () {
       formTitle.textContent = 'Edit meeting';
       deleteButton.hidden = false;
       fieldDate.value = ev.event_date;
+      fieldStart.value = ev.start_time ? ev.start_time.slice(0, 5) : '';
+      fieldEnd.value = ev.end_time ? ev.end_time.slice(0, 5) : '';
       fieldTitle.value = ev.title;
       fieldProject.value = ev.project_id || '';
       fieldNotes.value = ev.notes || '';
@@ -159,12 +189,22 @@ window.BlockheadsCalendar = (function () {
     e.preventDefault();
     const payload = {
       event_date: fieldDate.value,
+      start_time: fieldStart.value || null,
+      end_time: fieldEnd.value || null,
       title: fieldTitle.value.trim(),
       project_id: fieldProject.value || null,
       notes: fieldNotes.value.trim() || null,
     };
     if (!payload.event_date || !payload.title) {
       alert('Date and title are required.');
+      return;
+    }
+    if (payload.end_time && !payload.start_time) {
+      alert('Please add a start time too (or clear the end time).');
+      return;
+    }
+    if (payload.start_time && payload.end_time && payload.end_time <= payload.start_time) {
+      alert('End time must be after the start time.');
       return;
     }
 

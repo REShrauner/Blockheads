@@ -137,6 +137,8 @@ with check (my_role() in ('admin', 'superuser'));
 create table if not exists calendar_events (
   id uuid primary key default gen_random_uuid(),
   event_date date not null,
+  start_time time,
+  end_time time,
   title text not null,
   project_id uuid references projects(id) on delete set null,
   notes text,
@@ -145,6 +147,10 @@ create table if not exists calendar_events (
 );
 
 create index if not exists calendar_events_date_idx on calendar_events (event_date);
+
+-- Added later: optional start/end times (blank = all-day). Safe to re-run.
+alter table calendar_events add column if not exists start_time time;
+alter table calendar_events add column if not exists end_time time;
 
 alter table calendar_events enable row level security;
 

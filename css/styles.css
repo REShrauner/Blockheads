@@ -50,7 +50,7 @@ input, select, textarea, button {
   color: inherit;
 }
 
-input[type="text"], input[type="email"], input[type="password"], input[type="date"], input[type="file"], select, textarea {
+input[type="text"], input[type="email"], input[type="password"], input[type="date"], input[type="time"], input[type="file"], select, textarea {
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -127,6 +127,9 @@ button:disabled { opacity: 0.6; cursor: default; }
 #sign-in-form, #request-access-form { display: flex; flex-direction: column; gap: 14px; }
 .form-row { display: flex; flex-direction: column; gap: 5px; }
 .form-row label { font-weight: 700; font-size: 0.85rem; }
+.form-row-pair { display: flex; gap: 12px; }
+.form-row-pair .form-row { flex: 1; }
+.form-hint { margin: -4px 0 0; font-size: 0.8rem; }
 
 /* ---- App header / nav ------------------------------------------------ */
 .app-header {

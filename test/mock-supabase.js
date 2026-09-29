@@ -35,7 +35,7 @@
       { id: 'proj-2', name: 'Flying Geese', description: '', icon_path: null, created_by: 'u-super', created_by_name: 'Rex', created_at: iso(-10) },
     ],
     calendar_events: [
-      { id: 'ev-1', event_date: dateStr(7), title: 'HST Workshop', project_id: 'proj-1', notes: 'Bring rotary cutter', created_by: 'u-admin', created_at: iso(-5) },
+      { id: 'ev-1', event_date: dateStr(7), start_time: '10:00:00', end_time: '14:00:00', title: 'HST Workshop', project_id: 'proj-1', notes: 'Bring rotary cutter', created_by: 'u-admin', created_at: iso(-5) },
       { id: 'ev-2', event_date: dateStr(14), title: 'Flying Geese Bee', project_id: 'proj-2', notes: null, created_by: 'u-super', created_at: iso(-4) },
       { id: 'ev-3', event_date: dateStr(-3), title: 'Past Meeting', project_id: null, notes: null, created_by: 'u-admin', created_at: iso(-20) },
     ],
