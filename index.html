@@ -69,7 +69,7 @@
       <span class="brand-name">Blockheads</span>
     </div>
     <nav class="main-nav">
-      <a href="#" id="nav-calendar" class="nav-link">Calendar</a>
+      <a href="#" id="nav-calendar" class="nav-link">Home</a>
       <a href="#" id="nav-projects" class="nav-link">Projects</a>
       <a href="#" id="nav-members" class="nav-link" hidden>Members</a>
     </nav>
@@ -93,21 +93,16 @@
         <p id="notices-empty" class="hint" hidden>No notices right now.</p>
       </div>
       <div class="page-title-row">
-        <h1 id="calendar-month-label">Calendar</h1>
-        <div class="month-nav">
-          <button type="button" id="calendar-prev-month" aria-label="Previous month">&lsaquo;</button>
-          <button type="button" id="calendar-next-month" aria-label="Next month">&rsaquo;</button>
-        </div>
-        <span class="hint">Bee meetings and the day's project</span>
+        <h1>Scheduled Meetings</h1>
         <button id="add-event-button" class="primary push-right" hidden>+ Add meeting</button>
       </div>
-      <div class="calendar-layout">
-        <div id="calendar-grid" class="calendar-grid"></div>
-        <div class="upcoming-panel">
-          <h2>Upcoming</h2>
-          <div id="upcoming-list"></div>
-          <p id="upcoming-empty" class="hint" hidden>No meetings scheduled yet.</p>
+      <div id="meeting-list" class="meeting-list"></div>
+      <div class="meeting-nav">
+        <div class="month-nav">
+          <button type="button" id="calendar-prev-month" aria-label="Back one month">&lsaquo;</button>
+          <button type="button" id="calendar-next-month" aria-label="Forward one month">&rsaquo;</button>
         </div>
+        <span class="hint">Navigate Dates</span>
       </div>
     </section>
 

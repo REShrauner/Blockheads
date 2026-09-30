@@ -1,11 +1,9 @@
-// Calendar rendering, month navigation, and the add/edit meeting dialog.
+// Scheduled Meetings list (three months at a time, arrows move one month),
+// and the add/edit meeting dialog.
 window.BlockheadsCalendar = (function () {
   const B = window.Blockheads;
 
-  const monthLabel = document.getElementById('calendar-month-label');
-  const grid = document.getElementById('calendar-grid');
-  const upcomingList = document.getElementById('upcoming-list');
-  const upcomingEmpty = document.getElementById('upcoming-empty');
+  const meetingList = document.getElementById('meeting-list');
   const addEventButton = document.getElementById('add-event-button');
   const prevMonthButton = document.getElementById('calendar-prev-month');
   const nextMonthButton = document.getElementById('calendar-next-month');
@@ -53,7 +51,6 @@ window.BlockheadsCalendar = (function () {
   const cancelButton = document.getElementById('cancel-event-button');
 
   let editingId = null;
-  const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   function toDateStr(y, m, d) {
     return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
@@ -62,12 +59,6 @@ window.BlockheadsCalendar = (function () {
   // Sort key: date, then start time (all-day events first).
   function eventSortKey(e) {
     return `${e.event_date} ${e.start_time ? e.start_time.slice(0, 5) : '00:00'}`;
-  }
-
-  function eventsOn(dateStr) {
-    return B.state.events
-      .filter((e) => e.event_date === dateStr)
-      .sort((a, b) => eventSortKey(a).localeCompare(eventSortKey(b)));
   }
 
   // "14:30:00" -> "2:30 PM"
@@ -87,97 +78,81 @@ window.BlockheadsCalendar = (function () {
       : formatTime(ev.start_time);
   }
 
+  // "2026-10-03" -> "Saturday, October 3, 2026" (local date, no timezone shift)
+  function longDate(dateStr) {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    return new Date(y, m - 1, d).toLocaleDateString('en-US', {
+      weekday: 'long', month: 'long', day: 'numeric', year: 'numeric',
+    });
+  }
+
+  function todayStr() {
+    const t = new Date();
+    return toDateStr(t.getFullYear(), t.getMonth(), t.getDate());
+  }
+
+  const MONTHS_SHOWN = 3;
+
+  function monthName(y, m) {
+    return new Date(y, m, 1).toLocaleDateString('en-US', { month: 'long' });
+  }
+
+  function meetingCard(ev, today) {
+    const past = ev.event_date < today;
+    const project = ev.project_id && B.state.projects.find((p) => p.id === ev.project_id);
+    const when = formatTimeRange(ev);
+    const card = document.createElement('article');
+    card.className = 'meeting-card' + (past ? ' past' : '');
+    card.innerHTML = `
+      <div class="meeting-thumb"></div>
+      <div class="meeting-info">
+        <div class="meeting-date">${B.escapeHtml(longDate(ev.event_date))}${past ? '<span class="past-tag">Past</span>' : ''}</div>
+        ${when ? `<div class="meeting-time">${B.escapeHtml(when)}</div>` : ''}
+        <div class="meeting-title">${B.escapeHtml(ev.title)}</div>
+        ${project ? `<button type="button" class="meeting-project">Project: ${B.escapeHtml(project.name)}</button>` : ''}
+        ${ev.notes ? `<p class="meeting-notes">${B.escapeHtml(ev.notes)}</p>` : ''}
+      </div>
+      ${B.isAdmin() ? '<button type="button" class="small-button meeting-edit">Edit</button>' : ''}
+    `;
+    const thumbPath = photoPathFor(ev);
+    if (thumbPath) setThumb(card.querySelector('.meeting-thumb'), thumbPath);
+    const projBtn = card.querySelector('.meeting-project');
+    if (projBtn) projBtn.addEventListener('click', () => window.BlockheadsProjects.openProjectDetail(project.id));
+    const editBtn = card.querySelector('.meeting-edit');
+    if (editBtn) editBtn.addEventListener('click', () => openForm(ev.id));
+    return card;
+  }
+
+  // Shows three months at a time, starting with B.state.calendarMonth.
+  // The arrows move the window one month per click.
   function renderCalendar() {
     const y = B.state.calendarYear;
     const m = B.state.calendarMonth;
-    monthLabel.textContent = new Date(y, m, 1).toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
     addEventButton.hidden = !B.isAdmin();
+    const today = todayStr();
 
-    grid.innerHTML = '';
-    DOW.forEach((d) => {
-      const cell = document.createElement('div');
-      cell.className = 'calendar-dow';
-      cell.textContent = d;
-      grid.appendChild(cell);
-    });
+    meetingList.innerHTML = '';
+    for (let i = 0; i < MONTHS_SHOWN; i++) {
+      const d = new Date(y, m + i, 1);
+      const my = d.getFullYear(), mm = d.getMonth();
+      const prefix = toDateStr(my, mm, 1).slice(0, 7);
+      const monthEvents = B.state.events
+        .filter((e) => e.event_date.startsWith(prefix))
+        .sort((a, b) => eventSortKey(a).localeCompare(eventSortKey(b)));
 
-    const firstOfMonth = new Date(y, m, 1);
-    const startWeekday = firstOfMonth.getDay(); // 0 = Sun
-    const daysInMonth = new Date(y, m + 1, 0).getDate();
+      const group = document.createElement('section');
+      group.className = 'month-group';
 
-    for (let i = 0; i < startWeekday; i++) {
-      const filler = document.createElement('div');
-      filler.className = 'calendar-day empty';
-      grid.appendChild(filler);
-    }
-
-    for (let day = 1; day <= daysInMonth; day++) {
-      const dateStr = toDateStr(y, m, day);
-      const dayEvents = eventsOn(dateStr);
-      const cell = document.createElement('div');
-      cell.className = 'calendar-day' + (dayEvents.length ? ' has-event' : '');
-
-      const dayNum = document.createElement('span');
-      dayNum.textContent = String(day);
-      cell.appendChild(dayNum);
-
-      dayEvents.forEach((ev) => {
-        const chip = document.createElement('button');
-        chip.type = 'button';
-        chip.className = 'event-chip';
-        const when = formatTimeRange(ev);
-        chip.textContent = ev.start_time ? `${formatTime(ev.start_time)} ${ev.title}` : ev.title;
-        const tip = when ? `${ev.title} (${when})` : ev.title;
-        chip.title = B.isAdmin() ? `${tip} - click to edit` : tip;
-        chip.addEventListener('click', () => {
-          if (B.isAdmin()) {
-            openForm(ev.id);
-          } else if (ev.project_id) {
-            window.BlockheadsProjects.openProjectDetail(ev.project_id);
-          }
-        });
-        cell.appendChild(chip);
-      });
-
-      if (B.isAdmin() && dayEvents.length === 0) {
-        cell.style.cursor = 'pointer';
-        cell.addEventListener('click', () => openForm(null, dateStr));
+      if (monthEvents.length === 0) {
+        const empty = document.createElement('p');
+        empty.className = 'meeting-list-empty hint';
+        empty.textContent = `No meeting scheduled for ${monthName(my, mm)}.`;
+        group.appendChild(empty);
+      } else {
+        monthEvents.forEach((ev) => group.appendChild(meetingCard(ev, today)));
       }
-
-      grid.appendChild(cell);
+      meetingList.appendChild(group);
     }
-
-    renderUpcoming();
-  }
-
-  function renderUpcoming() {
-    const todayStr = toDateStr(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
-    const upcoming = B.state.events
-      .filter((e) => e.event_date >= todayStr)
-      .sort((a, b) => eventSortKey(a).localeCompare(eventSortKey(b)))
-      .slice(0, 5);
-
-    upcomingList.innerHTML = '';
-    upcomingEmpty.hidden = upcoming.length > 0;
-
-    upcoming.forEach((ev) => {
-      const item = document.createElement('button');
-      item.type = 'button';
-      item.className = 'upcoming-item';
-      item.innerHTML = `
-        <div class="upcoming-thumb"></div>
-        <div class="upcoming-meta">
-          <span class="upcoming-date">${B.formatDate(ev.event_date)}${ev.start_time ? ' · ' + formatTimeRange(ev) : ''}</span>
-          <span class="upcoming-title">${B.escapeHtml(ev.title)}</span>
-        </div>
-      `;
-      item.addEventListener('click', () => {
-        if (ev.project_id) window.BlockheadsProjects.openProjectDetail(ev.project_id);
-      });
-      const thumbPath = photoPathFor(ev);
-      if (thumbPath) setThumb(item.querySelector('.upcoming-thumb'), thumbPath);
-      upcomingList.appendChild(item);
-    });
   }
 
   function populateProjectOptions() {

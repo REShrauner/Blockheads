@@ -60,21 +60,22 @@ async function main() {
   check('member: role badge reads Member', (await page.textContent('#user-role-badge')).trim() === 'Member');
   check('member: Members nav hidden', await page.isHidden('#nav-members'));
   check('member: Add meeting button hidden', await page.isHidden('#add-event-button'));
-  // Fixture events are set relative to today: one in the past (this month)
-  // and two in the future (next month), so the current month's grid should
-  // show exactly the one past event as a chip.
-  const memberEventChips = await page.$$('#calendar-grid .event-chip');
-  check('member: calendar shows this month\'s event', memberEventChips.length === 1, `found ${memberEventChips.length}`);
+  // Scheduled Meetings list: three months at a time starting this month.
+  // Fixture meetings are 7 and 14 days from today, so both fall in the window.
+  const cardText = async () => page.$$eval('#meeting-list .meeting-card', (els) => els.map((e) => e.textContent));
+  const shown = await cardText();
+  check('member: list shows the upcoming meetings', shown.some((t) => t.includes('HST Workshop')) && shown.some((t) => t.includes('Flying Geese Bee')), `found ${shown.length} cards`);
+  const dateOk = await page.$eval('#meeting-list .meeting-card:not(.past) .meeting-date', (el) => /^[A-Z][a-z]+day, [A-Z][a-z]+ \d{1,2}, \d{4}/.test(el.textContent.trim()));
+  check('member: dates read like "Saturday, October 3, 2026"', dateOk);
+  const pastCards = await page.$$eval('#meeting-list .meeting-card.past', (els) => els.map((e) => e.textContent));
+  check('member: any past meeting shown is greyed out', pastCards.every((t) => t.includes('Past Meeting')));
+  check('member: no Edit buttons on meetings', (await page.$$('#meeting-list .meeting-edit')).length === 0);
+  check('member: three months shown', (await page.$$('#meeting-list .month-group')).length === 3);
 
-  const memberUpcoming = await page.$$('#upcoming-list .upcoming-item');
-  check('member: upcoming list shows only future events', memberUpcoming.length === 2, `found ${memberUpcoming.length}`);
-
-  await page.click('#calendar-next-month');
-  await page.waitForTimeout(100);
-  const nextMonthChips = await page.$$('#calendar-grid .event-chip');
-  check('member: next month shows the two future events', nextMonthChips.length === 2, `found ${nextMonthChips.length}`);
-  await page.click('#calendar-prev-month');
-  await page.waitForTimeout(100);
+  for (let i = 0; i < 3; i++) { await page.click('#calendar-next-month'); await page.waitForTimeout(50); }
+  check('member: three clicks forward shows three empty months', (await page.$$('#meeting-list .meeting-list-empty')).length === 3);
+  for (let i = 0; i < 3; i++) { await page.click('#calendar-prev-month'); await page.waitForTimeout(50); }
+  check('member: arrows come back to the upcoming meetings', (await cardText()).some((t) => t.includes('HST Workshop')));
 
   await page.click('#nav-projects');
   await page.waitForTimeout(100);
@@ -103,6 +104,11 @@ async function main() {
 
   check('admin: Members nav visible', await page.isVisible('#nav-members'));
   check('admin: Add meeting button visible', await page.isVisible('#add-event-button'));
+  check('admin: Edit button on each meeting', (await page.$$('#meeting-list .meeting-edit')).length === (await page.$$('#meeting-list .meeting-card')).length);
+  await page.click('#meeting-list .meeting-card:has-text("HST Workshop") .meeting-edit');
+  await page.waitForTimeout(50);
+  check('admin: Edit opens the meeting form with its details', (await page.inputValue('#event-title')) === 'HST Workshop' && (await page.inputValue('#event-start-time')) === '10:00');
+  await page.click('#cancel-event-button');
 
   await page.click('#nav-members');
   await page.waitForTimeout(100);
