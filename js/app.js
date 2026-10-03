@@ -78,7 +78,7 @@ window.Blockheads = (function () {
 
   function showSection(name) {
     Object.entries(els.sections).forEach(([key, el]) => { el.hidden = key !== name; });
-    [els.navCalendar, els.navProjects].forEach((a) => a.classList.remove('active'));
+    [els.navCalendar, els.navProjects, els.navMembers].forEach((a) => a.classList.remove('active'));
     if (name === 'calendar') els.navCalendar.classList.add('active');
     if (name === 'projects' || name === 'projectDetail') els.navProjects.classList.add('active');
     if (name === 'members') els.navMembers.classList.add('active');

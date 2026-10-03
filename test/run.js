@@ -114,6 +114,7 @@ async function main() {
   await page.waitForTimeout(100);
   check('admin: no Make admin/member buttons (superuser-only)', (await page.$$('#members-list .role-change-button')).length === 0);
   check('admin: pending count shows 2', (await page.textContent('#pending-count')).trim() === '2');
+  check('admin: no pending badge on Members nav (superuser-only)', await page.isHidden('#nav-members-badge'));
   const pendingRows = await page.$$('#pending-requests-list .request-row');
   check('admin: two pending request rows rendered', pendingRows.length === 2, `found ${pendingRows.length}`);
   const memberRows = await page.$$('#members-list .member-row');
@@ -178,6 +179,7 @@ async function main() {
 
   await page.click('#nav-members');
   await page.waitForTimeout(100);
+  check('superuser: no pending badge when zero requests', await page.isHidden('#nav-members-badge'));
   const removeButtonsSuper = await page.$$('#members-list .remove-member-button');
   check('superuser: remove buttons present for other members', removeButtonsSuper.length > 0, `found ${removeButtonsSuper.length}`);
 

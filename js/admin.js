@@ -10,6 +10,7 @@ window.BlockheadsAdmin = (function () {
   const pendingCount = document.getElementById('pending-count');
   const membersList = document.getElementById('members-list');
   const memberCount = document.getElementById('member-count');
+  const navMembersBadge = document.getElementById('nav-members-badge');
 
   async function loadMembersAndRequests() {
     const [{ data: requests, error: reqError }, { data: profiles, error: profError }] = await Promise.all([
@@ -28,6 +29,13 @@ window.BlockheadsAdmin = (function () {
 
   function renderAdmin() {
     pendingCount.textContent = String(B.state.pendingRequests.length);
+    // Superuser only: superscript count of pending requests on the Members
+    // nav link, shown only when there's at least one waiting.
+    if (navMembersBadge) {
+      const n = B.state.pendingRequests.length;
+      navMembersBadge.textContent = n > 0 ? String(n) : '';
+      navMembersBadge.hidden = !(B.isSuperuser() && n > 0);
+    }
     pendingEmpty.hidden = B.state.pendingRequests.length > 0;
     pendingList.innerHTML = '';
 

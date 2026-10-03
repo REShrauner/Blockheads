@@ -148,6 +148,12 @@ button:disabled { opacity: 0.6; cursor: default; }
 }
 .nav-link:hover { color: var(--accent); }
 .nav-link.active { color: var(--accent); font-weight: 700; border-bottom-color: var(--accent); }
+.nav-badge {
+  font-size: 0.65rem; font-weight: 700; color: #fff; background: var(--gold);
+  margin-left: 2px; padding: 1px 5px; border-radius: 999px;
+  vertical-align: super; line-height: 1;
+}
+.nav-badge[hidden] { display: none; }
 .header-right { margin-left: auto; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .role-badge {
   font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
