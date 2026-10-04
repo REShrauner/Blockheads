@@ -1,5 +1,6 @@
 // Projects grid, project detail (file list backed by Supabase Storage), and
-// the add/edit project dialog.
+// the add/edit project dialog. Editing and deleting are limited to admins and
+// the superuser (buttons hidden for members; enforced by RLS in schema.sql).
 window.BlockheadsProjects = (function () {
   const B = window.Blockheads;
   const BUCKET = 'project-files';
@@ -27,7 +28,10 @@ window.BlockheadsProjects = (function () {
   const fieldName = document.getElementById('project-name');
   const fieldDescription = document.getElementById('project-description');
   const fieldIcon = document.getElementById('project-icon-input');
+  const fieldIconLabel = document.getElementById('project-icon-label');
   const deleteButton = document.getElementById('delete-project-button');
+  const editProjectButton = document.getElementById('edit-project-button');
+  const deleteProjectDetailButton = document.getElementById('delete-project-detail-button');
   const cancelButton = document.getElementById('cancel-project-button');
 
   let editingId = null;
@@ -270,9 +274,11 @@ window.BlockheadsProjects = (function () {
       deleteButton.hidden = false;
       fieldName.value = project.name;
       fieldDescription.value = project.description || '';
+      fieldIconLabel.innerHTML = 'New icon photo <span class="hint-inline">(optional &mdash; leave blank to keep the current one)</span>';
     } else {
       formTitle.textContent = 'Add project';
       deleteButton.hidden = true;
+      fieldIconLabel.innerHTML = 'Icon photo <span class="hint-inline">(optional)</span>';
     }
     dialog.showModal();
   }
@@ -289,6 +295,19 @@ window.BlockheadsProjects = (function () {
     if (editingId) {
       const { error } = await window.supabaseClient.from('projects').update({ name, description }).eq('id', editingId);
       if (error) { alert('Could not save: ' + error.message); return; }
+
+      if (fieldIcon.files.length) {
+        try {
+          const file = await prepareIconPhoto(fieldIcon.files[0]);
+          const path = `${editingId}/icon/${Date.now()}-${file.name}`;
+          const { error: uploadError } = await window.supabaseClient.storage.from(BUCKET).upload(path, file, { upsert: true });
+          if (uploadError) throw uploadError;
+          const { error: iconError } = await window.supabaseClient.from('projects').update({ icon_path: path }).eq('id', editingId);
+          if (iconError) throw iconError;
+        } catch (err) {
+          alert('Changes saved, but the photo could not be updated: ' + err.message);
+        }
+      }
     } else {
       const { data: inserted, error } = await window.supabaseClient
         .from('projects')
@@ -315,19 +334,55 @@ window.BlockheadsProjects = (function () {
       }
     }
 
+    const editedId = editingId;
     dialog.close();
     await B.refreshCore();
+    // If we were editing from the project's own page, redraw it with the new details.
+    if (editedId && B.state.currentProjectId === editedId) await openProjectDetail(editedId);
   });
 
-  deleteButton.addEventListener('click', async () => {
-    if (!editingId) return;
-    if (!confirm('Delete this project? Its files will stay in storage but the project entry, and any calendar links to it, will be removed. This can\'t be undone.')) return;
-    const { error } = await window.supabaseClient.from('projects').delete().eq('id', editingId);
-    if (error) { alert('Could not delete: ' + error.message); return; }
-    dialog.close();
+  // Removes everything stored under a folder in the bucket (Supabase can only
+  // list one level at a time, so this walks the known subfolders).
+  async function removeStoredFiles(projectId) {
+    const paths = [];
+    for (const sub of ['icon', 'files']) {
+      const { data } = await window.supabaseClient.storage.from(BUCKET).list(`${projectId}/${sub}`, { limit: 1000 });
+      (data || []).filter((f) => f.id).forEach((f) => paths.push(`${projectId}/${sub}/${f.name}`));
+    }
+    if (paths.length) {
+      const { error } = await window.supabaseClient.storage.from(BUCKET).remove(paths);
+      if (error) throw error;
+    }
+  }
+
+  async function deleteProject(projectId) {
+    const project = B.state.projects.find((p) => p.id === projectId);
+    if (!project) return false;
+    if (!confirm(`Delete "${project.name}"? Its photo and all of its files will be deleted, and any calendar meetings linked to it will be unlinked (the meetings themselves stay). This can't be undone.`)) return false;
+    const { error } = await window.supabaseClient.from('projects').delete().eq('id', projectId);
+    if (error) { alert('Could not delete: ' + error.message); return false; }
+    try {
+      await removeStoredFiles(projectId);
+    } catch (err) {
+      console.warn('Project deleted, but some stored files could not be removed: ' + err.message);
+    }
     B.state.currentProjectId = null;
     B.showSection('projects');
     await B.refreshCore();
+    return true;
+  }
+
+  deleteButton.addEventListener('click', async () => {
+    if (!editingId) return;
+    if (await deleteProject(editingId)) dialog.close();
+  });
+
+  editProjectButton.addEventListener('click', () => {
+    if (B.state.currentProjectId) openForm(B.state.currentProjectId);
+  });
+
+  deleteProjectDetailButton.addEventListener('click', () => {
+    if (B.state.currentProjectId) deleteProject(B.state.currentProjectId);
   });
 
   return { renderProjectsGrid, openProjectDetail, prepareIconPhoto };

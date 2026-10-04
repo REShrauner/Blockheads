@@ -128,8 +128,10 @@
           <p id="project-detail-byline" class="hint small"></p>
         </div>
         <div class="project-detail-actions" id="project-detail-admin-actions" hidden>
+          <button id="edit-project-button">Edit</button>
           <button id="replace-icon-button">Replace photo</button>
           <button id="upload-file-button" class="primary">+ Upload file</button>
+          <button id="delete-project-detail-button" class="danger">Delete</button>
           <input type="file" id="icon-file-input" accept="image/*,.heic,.heif" hidden>
           <input type="file" id="attachment-file-input" hidden multiple>
         </div>
@@ -257,7 +259,7 @@
         <textarea id="project-description" rows="3"></textarea>
       </div>
       <div class="form-row">
-        <label for="project-icon-input">Icon photo <span class="hint-inline">(optional)</span></label>
+        <label for="project-icon-input" id="project-icon-label">Icon photo <span class="hint-inline">(optional)</span></label>
         <input type="file" id="project-icon-input" accept="image/*,.heic,.heif">
       </div>
       <div class="dialog-actions">

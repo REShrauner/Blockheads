@@ -164,9 +164,30 @@ async function main() {
   await page.waitForTimeout(150);
   check('admin: file removed after delete', await page.isVisible('#project-files-empty'));
 
-  // Delete the project itself to leave state clean-ish, then confirm redirect
-  await page.click('#back-to-projects');
+  // Edit the project from its detail page
+  check('admin: Edit button visible on project page', await page.isVisible('#edit-project-button'));
+  check('admin: Delete button visible on project page', await page.isVisible('#delete-project-detail-button'));
+  await page.click('#edit-project-button');
   await page.waitForTimeout(100);
+  check('admin: edit dialog opens with current name', (await page.inputValue('#project-name')) === 'Log Cabin');
+  check('admin: edit dialog title says Edit', (await page.textContent('#project-form-title')) === 'Edit project');
+  await page.fill('#project-name', 'Log Cabin Revised');
+  await page.click('#project-form button[type="submit"]');
+  await page.waitForTimeout(200);
+  check('admin: project page shows edited name', (await page.textContent('#project-detail-name')) === 'Log Cabin Revised');
+
+  // Upload a file, then delete the whole project from its page
+  await page.setInputFiles('#attachment-file-input', tmpFile);
+  await page.waitForTimeout(200);
+  const deletedId = await page.evaluate(() => window.Blockheads.state.currentProjectId);
+  page.once('dialog', (d) => d.accept());
+  await page.click('#delete-project-detail-button');
+  await page.waitForTimeout(250);
+  check('admin: back on projects list after delete', await page.isVisible('#projects-section'));
+  const gridAfterDelete = await page.$$('#projects-grid .project-tile');
+  check('admin: project count back to 2 after delete', gridAfterDelete.length === 2, `found ${gridAfterDelete.length}`);
+  const leftoverFiles = await page.evaluate((id) => window.__mockStorageKeys().filter((k) => k.startsWith(id + '/')).length, deletedId);
+  check('admin: deleted project leaves no stored files', leftoverFiles === 0, `found ${leftoverFiles}`);
 
   await page.click('#sign-out-button');
   await page.waitForTimeout(150);

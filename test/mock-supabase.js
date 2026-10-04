@@ -241,4 +241,5 @@
   };
 
   window.__BLOCKHEADS_TEST_DB__ = DB;
+  window.__mockStorageKeys = () => Object.keys(STORAGE);
 })();
