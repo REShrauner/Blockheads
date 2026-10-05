@@ -242,4 +242,5 @@
 
   window.__BLOCKHEADS_TEST_DB__ = DB;
   window.__mockStorageKeys = () => Object.keys(STORAGE);
+  window.__mockStorageSize = (k) => STORAGE[k] && STORAGE[k].size;
 })();

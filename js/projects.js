@@ -169,7 +169,17 @@ window.BlockheadsProjects = (function () {
     uploadFileButton.disabled = true;
     uploadFileButton.textContent = 'Uploading…';
     try {
-      for (const file of Array.from(attachmentFileInput.files)) {
+      for (const original of Array.from(attachmentFileInput.files)) {
+        // Photos are shrunk before upload so downloads stay quick; other
+        // files (PDFs, documents) are uploaded exactly as they are.
+        let file = original;
+        if (isPhoto(original)) {
+          try {
+            file = await prepareIconPhoto(original, 2000);
+          } catch (err) {
+            console.warn('Could not shrink ' + original.name + ', uploading as-is: ' + err.message);
+          }
+        }
         const path = `${projectId}/files/${file.name}`;
         const { error } = await window.supabaseClient.storage.from(BUCKET).upload(path, file, { upsert: true });
         if (error) throw error;
@@ -205,7 +215,14 @@ window.BlockheadsProjects = (function () {
     return /\.(heic|heif)$/i.test(file.name) || /image\/hei[cf]/i.test(file.type);
   }
 
-  async function prepareIconPhoto(file) {
+  function isPhoto(file) {
+    return isHeic(file) || /^image\/(jpeg|png|webp)$/i.test(file.type);
+  }
+
+  // Shrinks a photo to at most maxSize px on the long side, saved as JPEG.
+  // HEIC is always converted. If shrinking wouldn't make the file smaller,
+  // the original is kept.
+  async function prepareIconPhoto(file, maxSize) {
     let blob = file;
     let baseName = file.name.replace(/\.[^.]+$/, '');
     if (isHeic(file)) {
@@ -218,8 +235,7 @@ window.BlockheadsProjects = (function () {
       return file; // keep animated GIFs as-is
     }
 
-    // Shrink to at most 1200px on the long side, saved as JPEG.
-    const MAX = 1200;
+    const MAX = maxSize || 1200;
     const bitmap = await createImageBitmap(blob);
     const scale = Math.min(1, MAX / Math.max(bitmap.width, bitmap.height));
     if (scale === 1 && blob !== file) {
@@ -231,6 +247,7 @@ window.BlockheadsProjects = (function () {
     canvas.height = Math.round(bitmap.height * scale);
     canvas.getContext('2d').drawImage(bitmap, 0, 0, canvas.width, canvas.height);
     const jpeg = await new Promise((res) => canvas.toBlob(res, 'image/jpeg', 0.85));
+    if (blob === file && jpeg.size >= file.size) return file;
     return new File([jpeg], `${baseName}.jpg`, { type: 'image/jpeg' });
   }
 

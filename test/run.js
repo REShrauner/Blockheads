@@ -21,6 +21,36 @@ function check(name, condition, detail) {
   }
 }
 
+// Builds an uncompressed-ish PNG (gradient + noise) so the test has a large
+// photo to upload without needing any image files checked in.
+function makeNoisyPng(w, h) {
+  const zlib = require('zlib');
+  const raw = Buffer.alloc((w * 3 + 1) * h);
+  let o = 0;
+  for (let y = 0; y < h; y++) {
+    raw[o++] = 0;
+    for (let x = 0; x < w; x++) {
+      raw[o++] = (x * 255 / w + Math.random() * 40) & 255;
+      raw[o++] = (y * 255 / h + Math.random() * 40) & 255;
+      raw[o++] = (Math.random() * 60 + 100) & 255;
+    }
+  }
+  const crcTable = Array.from({ length: 256 }, (_, n) => { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; return c >>> 0; });
+  const crc = (buf) => { let c = 0xffffffff; for (const b of buf) c = crcTable[(c ^ b) & 255] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; };
+  const chunk = (type, data) => {
+    const len = Buffer.alloc(4); len.writeUInt32BE(data.length);
+    const td = Buffer.concat([Buffer.from(type), data]);
+    const c = Buffer.alloc(4); c.writeUInt32BE(crc(td));
+    return Buffer.concat([len, td, c]);
+  };
+  const ihdr = Buffer.alloc(13);
+  ihdr.writeUInt32BE(w, 0); ihdr.writeUInt32BE(h, 4); ihdr[8] = 8; ihdr[9] = 2;
+  return Buffer.concat([
+    Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]),
+    chunk('IHDR', ihdr), chunk('IDAT', zlib.deflateSync(raw)), chunk('IEND', Buffer.alloc(0)),
+  ]);
+}
+
 async function main() {
   const browser = await chromium.launch();
   const page = await browser.newPage();
@@ -163,6 +193,22 @@ async function main() {
   await page.click('#project-files-list .file-delete');
   await page.waitForTimeout(150);
   check('admin: file removed after delete', await page.isVisible('#project-files-empty'));
+
+  // A big photo uploaded as a file gets shrunk before it is stored
+  const bigPng = path.join(os.tmpdir(), 'blockheads-big-photo.png');
+  fs.writeFileSync(bigPng, makeNoisyPng(2600, 1800));
+  await page.setInputFiles('#attachment-file-input', bigPng);
+  await page.waitForTimeout(1500);
+  const sizes = await page.evaluate((id) => {
+    const out = {};
+    window.__mockStorageKeys().filter((k) => k.startsWith(id + '/files/')).forEach((k) => { out[k.split('/').pop()] = window.__mockStorageSize(k); });
+    return out;
+  }, await page.evaluate(() => window.Blockheads.state.currentProjectId));
+  const bigOriginal = fs.statSync(bigPng).size;
+  check('admin: uploaded photo stored as JPEG with same name', 'blockheads-big-photo.jpg' in sizes, JSON.stringify(Object.keys(sizes)));
+  check('admin: uploaded photo is much smaller than original',
+    sizes['blockheads-big-photo.jpg'] > 0 && sizes['blockheads-big-photo.jpg'] < bigOriginal / 2,
+    `${sizes['blockheads-big-photo.jpg']} vs ${bigOriginal}`);
 
   // Edit the project from its detail page
   check('admin: Edit button visible on project page', await page.isVisible('#edit-project-button'));
