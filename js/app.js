@@ -77,6 +77,8 @@ window.Blockheads = (function () {
   }
 
   function showSection(name) {
+    // The Members screen is for admins and the superuser only.
+    if (name === 'members' && !isAdmin()) name = 'calendar';
     Object.entries(els.sections).forEach(([key, el]) => { el.hidden = key !== name; });
     [els.navCalendar, els.navProjects, els.navMembers].forEach((a) => a.classList.remove('active'));
     if (name === 'calendar') els.navCalendar.classList.add('active');

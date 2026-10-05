@@ -89,6 +89,9 @@ async function main() {
   check('member: app view visible after sign-in', await page.isVisible('#app-view'));
   check('member: role badge reads Member', (await page.textContent('#user-role-badge')).trim() === 'Member');
   check('member: Members nav hidden', await page.isHidden('#nav-members'));
+  await page.evaluate(() => window.Blockheads.showSection('members'));
+  check('member: Members screen cannot be opened', await page.isHidden('#members-section'));
+  await page.evaluate(() => window.Blockheads.showSection('calendar'));
   check('member: Add meeting button hidden', await page.isHidden('#add-event-button'));
   // Scheduled Meetings list: three months at a time starting this month.
   // Fixture meetings are 7 and 14 days from today, so both fall in the window.
