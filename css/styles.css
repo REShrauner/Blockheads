@@ -87,15 +87,8 @@ button:disabled { opacity: 0.6; cursor: default; }
 /* ---- Brand mark ---------------------------------------------------- */
 .brand { display: flex; align-items: center; gap: 10px; }
 .brand-mark {
-  width: 28px; height: 28px; border-radius: 6px; position: relative; overflow: hidden; flex-shrink: 0;
-}
-.brand-mark span:nth-child(1) {
-  position: absolute; inset: 0; background: var(--accent);
-  clip-path: polygon(0 0, 100% 0, 0 100%);
-}
-.brand-mark span:nth-child(2) {
-  position: absolute; inset: 0; background: var(--gold);
-  clip-path: polygon(100% 0, 100% 100%, 0 100%);
+  width: 32px; height: 32px; border-radius: 6px; flex-shrink: 0;
+  object-fit: cover; display: block;
 }
 .brand-name { font-weight: 700; font-size: 1.2rem; }
 
