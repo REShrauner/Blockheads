@@ -9,6 +9,12 @@ The Blockheads Quilting Bee's calendar and pattern/project repository: hand-code
 - **Members** - a superuser account (you) and up to a small handful of admins manage meetings, projects, and files, and approve or deny incoming membership requests. General members get read-only access once approved.
 - **Request access** - anyone can ask to join from the sign-in screen; they pick their own password on the request form, and it becomes their real login the moment an admin approves them. There's no separate invite-email step.
 
+## Coming Attractions
+
+A **Coming Attractions** page lists upcoming programs: the attraction, plus an optional speaker and optional date (undated ones show "Date to be announced"; past ones are hidden from members). Admins and the superuser enter and edit them from the **Members** page (**+ Enter attraction**), where there is also a private **Attraction notes** list for jotting down ideas about possible attractions - members never see those notes.
+
+If you set up your Supabase project before this feature existed, run `supabase/coming-attractions.sql` once in **SQL Editor** (it's safe to re-run). New installs get it from `schema.sql`.
+
 ## One-time setup
 
 ### 1. Create a Supabase project
@@ -83,6 +89,7 @@ js/supabaseClient.js                   sets up the shared Supabase connection
 js/app.js                              shared state, navigation, data loading
 js/calendar.js                         calendar rendering, month nav, add/edit meeting
 js/projects.js                         project grid, file list, upload/download/delete
+js/attractions.js                      Coming Attractions page, admin entry form, admin-only notes
 js/admin.js                            pending requests, member directory, make admin/member
 js/auth.js                             sign-in, sign-out, request-access form
 supabase/schema.sql                    tables + row-level security rules + storage policies

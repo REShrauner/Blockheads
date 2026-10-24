@@ -71,6 +71,7 @@
     <nav class="main-nav">
       <a href="#" id="nav-calendar" class="nav-link">Home</a>
       <a href="#" id="nav-projects" class="nav-link">Projects</a>
+      <a href="#" id="nav-attractions" class="nav-link">Coming Attractions</a>
       <a href="#" id="nav-members" class="nav-link" hidden>Members<sup id="nav-members-badge" class="nav-badge" hidden></sup></a>
     </nav>
     <div class="header-right">
@@ -140,6 +141,16 @@
       <p id="project-files-empty" class="hint" hidden>No files yet.</p>
     </section>
 
+    <!-- Coming Attractions -->
+    <section id="attractions-section" hidden>
+      <div class="page-title-row">
+        <h1>Coming Attractions</h1>
+        <span class="hint">Programs and speakers on the way</span>
+      </div>
+      <div id="attractions-list" class="attractions-list list-card"></div>
+      <p id="attractions-empty" class="hint" hidden>Nothing scheduled yet &ndash; check back soon.</p>
+    </section>
+
     <!-- Members / admin -->
     <section id="members-section" hidden>
       <div class="admin-block">
@@ -162,6 +173,26 @@
           </div>
           <div id="members-list"></div>
         </div>
+      </div>
+
+      <div class="admin-block">
+        <div class="page-title-row">
+          <h1>Coming Attractions</h1>
+          <span class="hint">Shown on the Coming Attractions page</span>
+          <button id="admin-add-attraction-button" class="primary push-right">+ Enter attraction</button>
+        </div>
+        <div id="admin-attractions-list" class="attractions-list list-card"></div>
+        <p id="admin-attractions-empty" class="hint" hidden>No attractions entered yet.</p>
+      </div>
+
+      <div class="admin-block">
+        <div class="page-title-row">
+          <h1>Attraction notes</h1>
+          <span class="hint">Admins only &ndash; ideas for possible attractions</span>
+          <button id="add-attraction-note-button" class="primary push-right">+ Add note</button>
+        </div>
+        <div id="attraction-notes-list" class="list-card"></div>
+        <p id="attraction-notes-empty" class="hint" hidden>No notes yet.</p>
       </div>
     </section>
 
@@ -188,6 +219,50 @@
       <div class="dialog-actions">
         <button type="button" id="delete-notice-button" class="danger push-left" hidden>Delete</button>
         <button type="button" id="cancel-notice-button">Cancel</button>
+        <button type="submit" class="primary">Save</button>
+      </div>
+    </form>
+  </div>
+</dialog>
+
+<!-- Add / edit attraction -->
+<dialog id="attraction-form-dialog">
+  <div class="dialog-body">
+    <h2 id="attraction-form-title">Enter attraction</h2>
+    <form id="attraction-form">
+      <div class="form-row">
+        <label for="attraction-title">Attraction</label>
+        <input type="text" id="attraction-title" required placeholder="e.g. Trunk show: Antique Quilts">
+      </div>
+      <div class="form-row">
+        <label for="attraction-speaker">Speaker <span class="hint-inline">(optional)</span></label>
+        <input type="text" id="attraction-speaker">
+      </div>
+      <div class="form-row">
+        <label for="attraction-date">Date <span class="hint-inline">(optional)</span></label>
+        <input type="date" id="attraction-date">
+      </div>
+      <div class="dialog-actions">
+        <button type="button" id="delete-attraction-button" class="danger push-left" hidden>Delete</button>
+        <button type="button" id="cancel-attraction-button">Cancel</button>
+        <button type="submit" class="primary">Save</button>
+      </div>
+    </form>
+  </div>
+</dialog>
+
+<!-- Add / edit attraction note (admins only) -->
+<dialog id="attraction-note-dialog">
+  <div class="dialog-body">
+    <h2 id="attraction-note-form-title">Add note</h2>
+    <form id="attraction-note-form">
+      <div class="form-row">
+        <label for="attraction-note-body">Note</label>
+        <textarea id="attraction-note-body" rows="6" required placeholder="Ideas, contact info, prices, who to ask..."></textarea>
+      </div>
+      <div class="dialog-actions">
+        <button type="button" id="delete-attraction-note-button" class="danger push-left" hidden>Delete</button>
+        <button type="button" id="cancel-attraction-note-button">Cancel</button>
         <button type="submit" class="primary">Save</button>
       </div>
     </form>
@@ -275,6 +350,7 @@
 <script src="../js/app.js"></script>
 <script src="../js/calendar.js"></script>
 <script src="../js/notices.js"></script>
+<script src="../js/attractions.js"></script>
 <script src="../js/projects.js"></script>
 <script src="../js/admin.js"></script>
 <script src="../js/auth.js"></script>

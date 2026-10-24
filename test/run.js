@@ -125,6 +125,18 @@ async function main() {
   const memberFileDownload = await page.$$('#project-files-list .file-download');
   check('member: download buttons present', memberFileDownload.length > 0, `found ${memberFileDownload.length}`);
 
+  // Coming Attractions (member view)
+  check('member: Coming Attractions nav visible', await page.isVisible('#nav-attractions'));
+  await page.click('#nav-attractions');
+  await page.waitForTimeout(100);
+  check('member: Coming Attractions page shows', await page.isVisible('#attractions-section'));
+  const memberAttractions = await page.$$eval('#attractions-list .attraction-row', (els) => els.map((e) => e.textContent));
+  check('member: sees upcoming and undated attractions', memberAttractions.length === 2, `found ${memberAttractions.length}`);
+  check('member: attraction shows speaker', memberAttractions.some((t) => t.includes('Trunk Show') && t.includes('Mary Ellis')));
+  check('member: undated attraction says date to be announced', memberAttractions.some((t) => t.includes('Fabric Swap Night') && t.includes('Date to be announced')));
+  check('member: past attraction hidden', !memberAttractions.some((t) => t.includes('Last Year Lecture')));
+  check('member: no Edit buttons on attractions', (await page.$$('#attractions-list .attraction-edit')).length === 0);
+
   await page.click('#sign-out-button');
   await page.waitForTimeout(150);
   check('sign-out returns to gate', await page.isVisible('#sign-in-view'));
@@ -250,6 +262,26 @@ async function main() {
   await page.click('#nav-members');
   await page.waitForTimeout(100);
   check('superuser: no pending badge when zero requests', await page.isHidden('#nav-members-badge'));
+
+  // Coming Attractions admin tools
+  check('superuser: Enter attraction button visible', await page.isVisible('#admin-add-attraction-button'));
+  check('superuser: admin list includes past attraction', (await page.textContent('#admin-attractions-list')).includes('Last Year Lecture'));
+  await page.click('#admin-add-attraction-button');
+  await page.fill('#attraction-title', 'Quilt Appraisal Day');
+  await page.click('#attraction-form button[type="submit"]');
+  await page.waitForTimeout(200);
+  check('superuser: attraction saved with no speaker or date', (await page.textContent('#admin-attractions-list')).includes('Quilt Appraisal Day'));
+  await page.click('#admin-attractions-list .attraction-row:has-text("Quilt Appraisal Day") .attraction-edit');
+  await page.fill('#attraction-speaker', 'Pat Appraiser');
+  await page.click('#attraction-form button[type="submit"]');
+  await page.waitForTimeout(200);
+  check('superuser: attraction edit saves speaker', (await page.textContent('#admin-attractions-list')).includes('Pat Appraiser'));
+  check('superuser: attraction notes listed', (await page.textContent('#attraction-notes-list')).includes('longarm demo'));
+  await page.click('#add-attraction-note-button');
+  await page.fill('#attraction-note-body', 'Maybe a binding workshop in the spring.');
+  await page.click('#attraction-note-form button[type="submit"]');
+  await page.waitForTimeout(200);
+  check('superuser: new attraction note saved', (await page.textContent('#attraction-notes-list')).includes('binding workshop'));
   const removeButtonsSuper = await page.$$('#members-list .remove-member-button');
   check('superuser: remove buttons present for other members', removeButtonsSuper.length > 0, `found ${removeButtonsSuper.length}`);
 

@@ -7,6 +7,8 @@ window.Blockheads = (function () {
     projects: [],
     events: [],
     notices: [],
+    attractions: [],
+    attractionNotes: [],   // admins only
     members: [],
     pendingRequests: [],
     currentProjectId: null,
@@ -21,11 +23,13 @@ window.Blockheads = (function () {
     userRoleBadge: document.getElementById('user-role-badge'),
     navCalendar: document.getElementById('nav-calendar'),
     navProjects: document.getElementById('nav-projects'),
+    navAttractions: document.getElementById('nav-attractions'),
     navMembers: document.getElementById('nav-members'),
     sections: {
       calendar: document.getElementById('calendar-section'),
       projects: document.getElementById('projects-section'),
       projectDetail: document.getElementById('project-detail-section'),
+      attractions: document.getElementById('attractions-section'),
       members: document.getElementById('members-section'),
     },
   };
@@ -80,9 +84,10 @@ window.Blockheads = (function () {
     // The Members screen is for admins and the superuser only.
     if (name === 'members' && !isAdmin()) name = 'calendar';
     Object.entries(els.sections).forEach(([key, el]) => { el.hidden = key !== name; });
-    [els.navCalendar, els.navProjects, els.navMembers].forEach((a) => a.classList.remove('active'));
+    [els.navCalendar, els.navProjects, els.navAttractions, els.navMembers].forEach((a) => a.classList.remove('active'));
     if (name === 'calendar') els.navCalendar.classList.add('active');
     if (name === 'projects' || name === 'projectDetail') els.navProjects.classList.add('active');
+    if (name === 'attractions') els.navAttractions.classList.add('active');
     if (name === 'members') els.navMembers.classList.add('active');
     window.location.hash = name === 'projectDetail' ? 'projects' : name;
   }
@@ -94,6 +99,7 @@ window.Blockheads = (function () {
     showSection('projects');
     window.BlockheadsProjects.renderProjectsGrid();
   });
+  els.navAttractions.addEventListener('click', (e) => { e.preventDefault(); showSection('attractions'); });
   els.navMembers.addEventListener('click', (e) => { e.preventDefault(); showSection('members'); });
 
   async function loadCore() {
@@ -101,10 +107,12 @@ window.Blockheads = (function () {
       { data: projects, error: projectsError },
       { data: events, error: eventsError },
       { data: notices, error: noticesError },
+      { data: attractions, error: attractionsError },
     ] = await Promise.all([
       window.supabaseClient.from('projects').select('*').order('name', { ascending: true }),
       window.supabaseClient.from('calendar_events').select('*').order('event_date', { ascending: true }),
       window.supabaseClient.from('notices').select('*').order('created_at', { ascending: false }),
+      window.supabaseClient.from('attractions').select('*').order('attraction_date', { ascending: true }),
     ]);
     if (projectsError) { alert('Could not load projects: ' + projectsError.message); }
     if (eventsError) { alert('Could not load calendar: ' + eventsError.message); }
@@ -113,9 +121,18 @@ window.Blockheads = (function () {
     // Notices are optional - if the table hasn't been created yet, just show none.
     if (noticesError) console.warn('Could not load notices: ' + noticesError.message);
     state.notices = notices || [];
+    // Attractions are optional too - until coming-attractions.sql has been
+    // run in Supabase, the page just shows nothing.
+    if (attractionsError) console.warn('Could not load attractions: ' + attractionsError.message);
+    state.attractions = attractions || [];
+    state.attractionNotes = [];
 
     if (isAdmin()) {
       await window.BlockheadsAdmin.loadMembersAndRequests();
+      const { data: notes, error: notesError } = await window.supabaseClient
+        .from('attraction_notes').select('*').order('created_at', { ascending: false });
+      if (notesError) console.warn('Could not load attraction notes: ' + notesError.message);
+      state.attractionNotes = notes || [];
     }
   }
 
@@ -124,6 +141,7 @@ window.Blockheads = (function () {
     window.BlockheadsNotices.renderNotices();
     window.BlockheadsCalendar.renderCalendar();
     window.BlockheadsProjects.renderProjectsGrid();
+    window.BlockheadsAttractions.render();
     if (isAdmin()) window.BlockheadsAdmin.renderAdmin();
   }
 
@@ -148,6 +166,7 @@ window.Blockheads = (function () {
     window.BlockheadsNotices.renderNotices();
     window.BlockheadsCalendar.renderCalendar();
     window.BlockheadsProjects.renderProjectsGrid();
+    window.BlockheadsAttractions.render();
     if (isAdmin()) window.BlockheadsAdmin.renderAdmin();
 
     showSection('calendar');

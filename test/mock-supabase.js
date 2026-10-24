@@ -45,6 +45,15 @@
     ],
   };
 
+  DB.attractions = [
+    { id: 'att-1', title: 'Trunk Show: Antique Quilts', speaker: 'Mary Ellis', attraction_date: dateStr(30), created_by: 'u-admin', created_by_name: 'Jane Admin', created_at: iso(-6) },
+    { id: 'att-2', title: 'Fabric Swap Night', speaker: null, attraction_date: null, created_by: 'u-super', created_by_name: 'Rex', created_at: iso(-5) },
+    { id: 'att-3', title: 'Last Year Lecture', speaker: 'Old Speaker', attraction_date: dateStr(-40), created_by: 'u-admin', created_by_name: 'Jane Admin', created_at: iso(-60) },
+  ];
+  DB.attraction_notes = [
+    { id: 'an-1', body: 'Ask the library about a longarm demo.', created_by: 'u-admin', created_by_name: 'Jane Admin', created_at: iso(-3) },
+  ];
+
   const STORAGE = {
     'proj-1/icon/hst.jpg': { size: 20480, created_at: iso(-20) },
     'proj-1/files/instructions.pdf': { size: 102400, created_at: iso(-19) },
