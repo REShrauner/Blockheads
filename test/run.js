@@ -130,12 +130,13 @@ async function main() {
   await page.click('#nav-attractions');
   await page.waitForTimeout(100);
   check('member: Coming Attractions page shows', await page.isVisible('#attractions-section'));
-  const memberAttractions = await page.$$eval('#attractions-list .attraction-row', (els) => els.map((e) => e.textContent));
+  const memberAttractions = await page.$$eval('#attractions-list .notice', (els) => els.map((e) => e.textContent));
   check('member: sees upcoming and undated attractions', memberAttractions.length === 2, `found ${memberAttractions.length}`);
   check('member: attraction shows speaker', memberAttractions.some((t) => t.includes('Trunk Show') && t.includes('Mary Ellis')));
   check('member: undated attraction says date to be announced', memberAttractions.some((t) => t.includes('Fabric Swap Night') && t.includes('Date to be announced')));
   check('member: past attraction hidden', !memberAttractions.some((t) => t.includes('Last Year Lecture')));
-  check('member: no Edit buttons on attractions', (await page.$$('#attractions-list .attraction-edit')).length === 0);
+  check('member: Add attraction button hidden', await page.isHidden('#add-attraction-button'));
+  check('member: no Edit buttons on attractions', (await page.$$('#attractions-list .notice-edit')).length === 0);
 
   await page.click('#sign-out-button');
   await page.waitForTimeout(150);

@@ -9,6 +9,7 @@ window.BlockheadsAttractions = (function () {
   // Public page
   const listEl = document.getElementById('attractions-list');
   const emptyEl = document.getElementById('attractions-empty');
+  const addButton = document.getElementById('add-attraction-button');
 
   // Admin page blocks
   const adminList = document.getElementById('admin-attractions-list');
@@ -76,6 +77,7 @@ window.BlockheadsAttractions = (function () {
 
   function renderPublic() {
     const admin = B.isAdmin();
+    addButton.hidden = !admin;
     // Members only see what's still coming up; admins also see past ones
     // (dimmed) so they can edit or clear them out.
     const visible = sortedAttractions().filter((a) => admin || !isPast(a));
@@ -83,11 +85,20 @@ window.BlockheadsAttractions = (function () {
     emptyEl.hidden = visible.length > 0;
     listEl.hidden = visible.length === 0;
     visible.forEach((a) => {
-      const row = document.createElement('article');
-      row.className = 'attraction-row' + (isPast(a) ? ' past' : '');
-      row.innerHTML = rowHtml(a, admin);
-      if (admin) row.querySelector('.attraction-edit').addEventListener('click', () => openForm(a.id));
-      listEl.appendChild(row);
+      // Same card look as the notices board.
+      const item = document.createElement('article');
+      item.className = 'notice' + (isPast(a) ? ' expired' : '');
+      const date = a.attraction_date ? B.formatDate(a.attraction_date) : 'Date to be announced';
+      item.innerHTML = `
+        <div class="notice-head">
+          <h3>${B.escapeHtml(a.title)}${isPast(a) ? '<span class="past-tag">Past</span>' : ''}</h3>
+          ${admin ? '<button type="button" class="small-button notice-edit">Edit</button>' : ''}
+        </div>
+        ${a.speaker ? `<p class="notice-body">${B.escapeHtml(a.speaker)}</p>` : ''}
+        <p class="hint small">${B.escapeHtml(date)}</p>
+      `;
+      if (admin) item.querySelector('.notice-edit').addEventListener('click', () => openForm(a.id));
+      listEl.appendChild(item);
     });
   }
 
@@ -150,6 +161,7 @@ window.BlockheadsAttractions = (function () {
   }
 
   adminAddButton.addEventListener('click', () => openForm(null));
+  addButton.addEventListener('click', () => openForm(null));
   cancelButton.addEventListener('click', () => dialog.close());
 
   form.addEventListener('submit', async (e) => {
