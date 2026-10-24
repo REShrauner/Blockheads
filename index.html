@@ -77,6 +77,7 @@
       <a href="#" id="nav-calendar" class="nav-link">Home</a>
       <a href="#" id="nav-projects" class="nav-link">Projects</a>
       <a href="#" id="nav-attractions" class="nav-link">Coming Attractions</a>
+      <a href="#" id="nav-notes" class="nav-link" hidden>Notes</a>
       <a href="#" id="nav-members" class="nav-link" hidden>Members<sup id="nav-members-badge" class="nav-badge" hidden></sup></a>
     </nav>
     <div class="header-right">
@@ -157,6 +158,17 @@
       <p id="attractions-empty" class="hint" hidden>Nothing scheduled yet &ndash; check back soon.</p>
     </section>
 
+    <!-- Notes (admins only) -->
+    <section id="notes-section" hidden>
+      <div class="page-title-row">
+        <h1>Notes</h1>
+        <span class="hint">Admins only &ndash; a shared place for ideas about possible attractions</span>
+        <button id="add-attraction-note-button" class="primary push-right">+ Add note</button>
+      </div>
+      <div id="attraction-notes-list" class="list-card"></div>
+      <p id="attraction-notes-empty" class="hint" hidden>No notes yet.</p>
+    </section>
+
     <!-- Members / admin -->
     <section id="members-section" hidden>
       <div class="admin-block">
@@ -179,26 +191,6 @@
           </div>
           <div id="members-list"></div>
         </div>
-      </div>
-
-      <div class="admin-block">
-        <div class="page-title-row">
-          <h1>Coming Attractions</h1>
-          <span class="hint">Shown on the Coming Attractions page</span>
-          <button id="admin-add-attraction-button" class="primary push-right">+ Enter attraction</button>
-        </div>
-        <div id="admin-attractions-list" class="attractions-list list-card"></div>
-        <p id="admin-attractions-empty" class="hint" hidden>No attractions entered yet.</p>
-      </div>
-
-      <div class="admin-block">
-        <div class="page-title-row">
-          <h1>Attraction notes</h1>
-          <span class="hint">Admins only &ndash; ideas for possible attractions</span>
-          <button id="add-attraction-note-button" class="primary push-right">+ Add note</button>
-        </div>
-        <div id="attraction-notes-list" class="list-card"></div>
-        <p id="attraction-notes-empty" class="hint" hidden>No notes yet.</p>
       </div>
     </section>
 

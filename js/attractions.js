@@ -11,10 +11,7 @@ window.BlockheadsAttractions = (function () {
   const emptyEl = document.getElementById('attractions-empty');
   const addButton = document.getElementById('add-attraction-button');
 
-  // Admin page blocks
-  const adminList = document.getElementById('admin-attractions-list');
-  const adminEmpty = document.getElementById('admin-attractions-empty');
-  const adminAddButton = document.getElementById('admin-add-attraction-button');
+  // Admin-only Notes page
   const notesList = document.getElementById('attraction-notes-list');
   const notesEmpty = document.getElementById('attraction-notes-empty');
   const addNoteButton = document.getElementById('add-attraction-note-button');
@@ -63,18 +60,6 @@ window.BlockheadsAttractions = (function () {
     });
   }
 
-  function rowHtml(a, admin) {
-    const date = a.attraction_date ? B.formatDate(a.attraction_date) : '';
-    return `
-      <div class="attraction-main">
-        <strong class="attraction-title">${B.escapeHtml(a.title)}${isPast(a) ? '<span class="past-tag">Past</span>' : ''}</strong>
-        ${a.speaker ? `<span class="attraction-speaker">${B.escapeHtml(a.speaker)}</span>` : ''}
-      </div>
-      <span class="attraction-date">${date ? B.escapeHtml(date) : '<span class="hint">Date to be announced</span>'}</span>
-      ${admin ? '<button type="button" class="small-button attraction-edit">Edit</button>' : ''}
-    `;
-  }
-
   function renderPublic() {
     const admin = B.isAdmin();
     addButton.hidden = !admin;
@@ -103,18 +88,6 @@ window.BlockheadsAttractions = (function () {
   }
 
   function renderAdminBlocks() {
-    const all = sortedAttractions();
-    adminList.innerHTML = '';
-    adminEmpty.hidden = all.length > 0;
-    adminList.hidden = all.length === 0;
-    all.forEach((a) => {
-      const row = document.createElement('div');
-      row.className = 'attraction-row admin' + (isPast(a) ? ' past' : '');
-      row.innerHTML = rowHtml(a, true);
-      row.querySelector('.attraction-edit').addEventListener('click', () => openForm(a.id));
-      adminList.appendChild(row);
-    });
-
     const notes = B.state.attractionNotes;
     notesList.innerHTML = '';
     notesEmpty.hidden = notes.length > 0;
@@ -160,7 +133,6 @@ window.BlockheadsAttractions = (function () {
     dialog.showModal();
   }
 
-  adminAddButton.addEventListener('click', () => openForm(null));
   addButton.addEventListener('click', () => openForm(null));
   cancelButton.addEventListener('click', () => dialog.close());
 

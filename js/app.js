@@ -24,12 +24,14 @@ window.Blockheads = (function () {
     navCalendar: document.getElementById('nav-calendar'),
     navProjects: document.getElementById('nav-projects'),
     navAttractions: document.getElementById('nav-attractions'),
+    navNotes: document.getElementById('nav-notes'),
     navMembers: document.getElementById('nav-members'),
     sections: {
       calendar: document.getElementById('calendar-section'),
       projects: document.getElementById('projects-section'),
       projectDetail: document.getElementById('project-detail-section'),
       attractions: document.getElementById('attractions-section'),
+      notes: document.getElementById('notes-section'),
       members: document.getElementById('members-section'),
     },
   };
@@ -82,12 +84,13 @@ window.Blockheads = (function () {
 
   function showSection(name) {
     // The Members screen is for admins and the superuser only.
-    if (name === 'members' && !isAdmin()) name = 'calendar';
+    if ((name === 'members' || name === 'notes') && !isAdmin()) name = 'calendar';
     Object.entries(els.sections).forEach(([key, el]) => { el.hidden = key !== name; });
-    [els.navCalendar, els.navProjects, els.navAttractions, els.navMembers].forEach((a) => a.classList.remove('active'));
+    [els.navCalendar, els.navProjects, els.navAttractions, els.navNotes, els.navMembers].forEach((a) => a.classList.remove('active'));
     if (name === 'calendar') els.navCalendar.classList.add('active');
     if (name === 'projects' || name === 'projectDetail') els.navProjects.classList.add('active');
     if (name === 'attractions') els.navAttractions.classList.add('active');
+    if (name === 'notes') els.navNotes.classList.add('active');
     if (name === 'members') els.navMembers.classList.add('active');
     window.location.hash = name === 'projectDetail' ? 'projects' : name;
   }
@@ -100,6 +103,7 @@ window.Blockheads = (function () {
     window.BlockheadsProjects.renderProjectsGrid();
   });
   els.navAttractions.addEventListener('click', (e) => { e.preventDefault(); showSection('attractions'); });
+  els.navNotes.addEventListener('click', (e) => { e.preventDefault(); showSection('notes'); });
   els.navMembers.addEventListener('click', (e) => { e.preventDefault(); showSection('members'); });
 
   async function loadCore() {
@@ -161,6 +165,7 @@ window.Blockheads = (function () {
     els.userEmailLabel.textContent = state.user.email;
     els.userRoleBadge.textContent = state.user.role.charAt(0).toUpperCase() + state.user.role.slice(1);
     els.navMembers.hidden = !isAdmin();
+    els.navNotes.hidden = !isAdmin();
 
     await loadCore();
     window.BlockheadsNotices.renderNotices();

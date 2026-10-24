@@ -89,6 +89,7 @@ async function main() {
   check('member: app view visible after sign-in', await page.isVisible('#app-view'));
   check('member: role badge reads Member', (await page.textContent('#user-role-badge')).trim() === 'Member');
   check('member: Members nav hidden', await page.isHidden('#nav-members'));
+  check('member: Notes nav hidden', await page.isHidden('#nav-notes'));
   await page.evaluate(() => window.Blockheads.showSection('members'));
   check('member: Members screen cannot be opened', await page.isHidden('#members-section'));
   await page.evaluate(() => window.Blockheads.showSection('calendar'));
@@ -149,6 +150,7 @@ async function main() {
   await page.waitForTimeout(150);
 
   check('admin: Members nav visible', await page.isVisible('#nav-members'));
+  check('admin: Notes nav visible', await page.isVisible('#nav-notes'));
   check('admin: Add meeting button visible', await page.isVisible('#add-event-button'));
   check('admin: Edit button on each meeting', (await page.$$('#meeting-list .meeting-edit')).length === (await page.$$('#meeting-list .meeting-card')).length);
   await page.click('#meeting-list .meeting-card:has-text("HST Workshop") .meeting-edit');
@@ -264,25 +266,33 @@ async function main() {
   await page.waitForTimeout(100);
   check('superuser: no pending badge when zero requests', await page.isHidden('#nav-members-badge'));
 
-  // Coming Attractions admin tools
-  check('superuser: Enter attraction button visible', await page.isVisible('#admin-add-attraction-button'));
-  check('superuser: admin list includes past attraction', (await page.textContent('#admin-attractions-list')).includes('Last Year Lecture'));
-  await page.click('#admin-add-attraction-button');
+  // Coming Attractions admin tools (on the Coming Attractions page)
+  await page.click('#nav-attractions');
+  await page.waitForTimeout(100);
+  check('superuser: Add attraction button visible', await page.isVisible('#add-attraction-button'));
+  check('superuser: list includes past attraction', (await page.textContent('#attractions-list')).includes('Last Year Lecture'));
+  await page.click('#add-attraction-button');
   await page.fill('#attraction-title', 'Quilt Appraisal Day');
   await page.click('#attraction-form button[type="submit"]');
   await page.waitForTimeout(200);
-  check('superuser: attraction saved with no speaker or date', (await page.textContent('#admin-attractions-list')).includes('Quilt Appraisal Day'));
-  await page.click('#admin-attractions-list .attraction-row:has-text("Quilt Appraisal Day") .attraction-edit');
+  check('superuser: attraction saved with no speaker or date', (await page.textContent('#attractions-list')).includes('Quilt Appraisal Day'));
+  await page.click('#attractions-list .notice:has-text("Quilt Appraisal Day") .notice-edit');
   await page.fill('#attraction-speaker', 'Pat Appraiser');
   await page.click('#attraction-form button[type="submit"]');
   await page.waitForTimeout(200);
-  check('superuser: attraction edit saves speaker', (await page.textContent('#admin-attractions-list')).includes('Pat Appraiser'));
+  check('superuser: attraction edit saves speaker', (await page.textContent('#attractions-list')).includes('Pat Appraiser'));
+  await page.click('#nav-notes');
+  await page.waitForTimeout(100);
+  check('superuser: Notes page shows', await page.isVisible('#notes-section'));
   check('superuser: attraction notes listed', (await page.textContent('#attraction-notes-list')).includes('longarm demo'));
   await page.click('#add-attraction-note-button');
   await page.fill('#attraction-note-body', 'Maybe a binding workshop in the spring.');
   await page.click('#attraction-note-form button[type="submit"]');
   await page.waitForTimeout(200);
   check('superuser: new attraction note saved', (await page.textContent('#attraction-notes-list')).includes('binding workshop'));
+  await page.click('#nav-members');
+  await page.waitForTimeout(100);
+  check('superuser: Members page has no notes block', (await page.$$('#attraction-notes-list')).length === 0 || await page.isHidden('#attraction-notes-list'));
   const removeButtonsSuper = await page.$$('#members-list .remove-member-button');
   check('superuser: remove buttons present for other members', removeButtonsSuper.length > 0, `found ${removeButtonsSuper.length}`);
 

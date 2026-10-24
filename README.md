@@ -11,7 +11,7 @@ The Blockheads Quilting Bee's calendar and pattern/project repository: hand-code
 
 ## Coming Attractions
 
-A **Coming Attractions** page lists upcoming programs: the attraction, plus an optional speaker and optional date (undated ones show "Date to be announced"; past ones are hidden from members). Admins and the superuser enter and edit them from the **Members** page (**+ Enter attraction**), where there is also a private **Attraction notes** list for jotting down ideas about possible attractions - members never see those notes.
+A **Coming Attractions** page lists upcoming programs: the attraction, plus an optional speaker and optional date (undated ones show "Date to be announced"; past ones are hidden from members). Admins and the superuser add and edit them right on that page (**+ Add attraction**). Admins also get a **Notes** menu item: a shared, admins-only notes area for ideas about possible attractions - members never see it.
 
 If you set up your Supabase project before this feature existed, run `supabase/coming-attractions.sql` once in **SQL Editor** (it's safe to re-run). New installs get it from `schema.sql`.
 
